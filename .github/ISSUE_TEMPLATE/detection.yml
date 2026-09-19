@@ -1,0 +1,23 @@
+name: Improve a detection
+description: Something worthwhile was filtered, or obvious slop slipped through
+labels: [detection]
+body:
+  - type: dropdown
+    id: result
+    attributes:
+      label: Which result?
+      options: [Worthwhile content was filtered, Low-quality content was kept, Not enough context to decide]
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Public example and expected outcome
+      description: Explain the quality evidence. AI use alone is not a reason to filter something.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Filter settings and reason shown
+      description: Include the threshold and whether destination or thumbnail checks were on. No secrets.

@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "NO SLOP — Make room for the good stuff",
+  "short_name": "NO SLOP",
+  "description": "Filter low-quality AI content, clickbait, and content-farm results. Configurable, reversible, and powered by Jev.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "NO SLOP", "default_icon": { "16":"icons/16.png", "32":"icons/32.png", "48":"icons/48.png", "128":"icons/128.png" } },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "icons": { "16":"icons/16.png", "32":"icons/32.png", "48":"icons/48.png", "128":"icons/128.png" },
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "exclude_matches": ["https://mail.google.com/*", "https://outlook.live.com/*", "https://outlook.office.com/*", "https://accounts.google.com/*", "https://*.slack.com/*", "https://discord.com/*", "https://web.whatsapp.com/*", "https://web.telegram.org/*"],
+    "js": ["content.js"], "run_at": "document_idle", "all_frames": false
+  }],
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'" }
+}

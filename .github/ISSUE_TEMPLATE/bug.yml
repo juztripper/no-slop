@@ -1,0 +1,23 @@
+name: Report a bug
+description: Broken filtering, page layout, or extension behavior
+labels: [bug]
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Include what you expected and the steps to reproduce it.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Site and browser version
+      placeholder: YouTube, Chrome 140, NO SLOP 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Public example or minimal HTML fixture
+      description: Remove personal information, cookies, API keys, and service tokens. Never attach a full private feed.

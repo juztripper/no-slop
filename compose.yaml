@@ -1,0 +1,21 @@
+services:
+  detector:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      BUDGET_FILE: /data/budget.json
+    ports:
+      - '127.0.0.1:8787:8787'
+    volumes:
+      - detector-budget:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+volumes:
+  detector-budget:

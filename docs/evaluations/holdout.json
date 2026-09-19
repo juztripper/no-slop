@@ -1,0 +1,668 @@
+{
+  "generatedAt": "2026-09-19T21:37:41.077Z",
+  "model": "~typesafe/jev-latest",
+  "corpus": "24 separately authored synthetic follow-up examples; policy frozen before this run. Not representative real-world data.",
+  "threshold": 0.85,
+  "total": 24,
+  "passed": 24,
+  "falsePositives": 0,
+  "truePositives": 8,
+  "falseNegatives": 0,
+  "rows": [
+    {
+      "id": "repair-failure",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 812,
+      "verdict": {
+        "id": "repair-failure",
+        "category": "quality",
+        "confidence": 0.8,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.04,
+          "synthetic": 0.05,
+          "clickbait": 0.04
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "quiet-personal",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 475,
+      "verdict": {
+        "id": "quiet-personal",
+        "category": "quality",
+        "confidence": 0.69,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.03,
+          "synthetic": 0.04,
+          "clickbait": 0.02
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "plain-small-business",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 572,
+      "verdict": {
+        "id": "plain-small-business",
+        "category": "quality",
+        "confidence": 0.81,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.03,
+          "synthetic": 0.04,
+          "clickbait": 0.03
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "generated-poem",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 515,
+      "verdict": {
+        "id": "generated-poem",
+        "category": "quality",
+        "confidence": 0.72,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.04,
+          "synthetic": 0.73,
+          "clickbait": 0.04
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "tutorial-explains-injection",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 424,
+      "verdict": {
+        "id": "tutorial-explains-injection",
+        "category": "quality",
+        "confidence": 0.71,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.06,
+          "synthetic": 0.07,
+          "clickbait": 0.05
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "news-correction",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 472,
+      "verdict": {
+        "id": "news-correction",
+        "category": "quality",
+        "confidence": 0.73,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.03,
+          "synthetic": 0.05,
+          "clickbait": 0.03
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "enthusiastic-project",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 400,
+      "verdict": {
+        "id": "enthusiastic-project",
+        "category": "quality",
+        "confidence": 0.74,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.05,
+          "synthetic": 0.05,
+          "clickbait": 0.09
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "hobby-beginner",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 524,
+      "verdict": {
+        "id": "hobby-beginner",
+        "category": "quality",
+        "confidence": 0.72,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.03,
+          "synthetic": 0.05,
+          "clickbait": 0.02
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "portuguese-opinion",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 439,
+      "verdict": {
+        "id": "portuguese-opinion",
+        "category": "quality",
+        "confidence": 0.72,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.04,
+          "synthetic": 0.04,
+          "clickbait": 0.03
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "spanish-gardening",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 472,
+      "verdict": {
+        "id": "spanish-gardening",
+        "category": "quality",
+        "confidence": 0.76,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.04,
+          "synthetic": 0.05,
+          "clickbait": 0.08
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "german-howto",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 428,
+      "verdict": {
+        "id": "german-howto",
+        "category": "quality",
+        "confidence": 0.69,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.04,
+          "synthetic": 0.05,
+          "clickbait": 0.03
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "french-question",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 434,
+      "verdict": {
+        "id": "french-question",
+        "category": "quality",
+        "confidence": 0.77,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.03,
+          "synthetic": 0.04,
+          "clickbait": 0.03
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "affiliate-transparent",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 444,
+      "verdict": {
+        "id": "affiliate-transparent",
+        "category": "quality",
+        "confidence": 0.68,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.09,
+          "synthetic": 0.06,
+          "clickbait": 0.08
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "isolated-reply",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 526,
+      "verdict": {
+        "id": "isolated-reply",
+        "category": "uncertain",
+        "confidence": 0,
+        "reasons": [
+          "Not enough context to judge fairly."
+        ],
+        "signals": {
+          "lowQuality": 0.06,
+          "synthetic": 0.04,
+          "clickbait": 0.03
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "vague-title",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 523,
+      "verdict": {
+        "id": "vague-title",
+        "category": "uncertain",
+        "confidence": 0,
+        "reasons": [
+          "Not enough context to judge fairly."
+        ],
+        "signals": {
+          "lowQuality": 0.41,
+          "synthetic": 0.06,
+          "clickbait": 0.67
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "obvious-parody",
+      "expected": "keep",
+      "actual": "keep",
+      "passed": true,
+      "elapsedMs": 438,
+      "verdict": {
+        "id": "obvious-parody",
+        "category": "quality",
+        "confidence": 0.72,
+        "reasons": [
+          "No strong quality problem found in the available evidence."
+        ],
+        "signals": {
+          "lowQuality": 0.07,
+          "synthetic": 0.12,
+          "clickbait": 0.08
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "credential-prize",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 428,
+      "verdict": {
+        "id": "credential-prize",
+        "category": "human-slop",
+        "confidence": 0.95,
+        "reasons": [
+          "Likely low-value content or spam. Its authorship is unknown.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.99,
+          "synthetic": 0.09,
+          "clickbait": 0.99
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "doorway-empty",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 392,
+      "verdict": {
+        "id": "doorway-empty",
+        "category": "human-slop",
+        "confidence": 0.91,
+        "reasons": [
+          "Likely low-value content or spam. Its authorship is unknown.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.98,
+          "synthetic": 0.14,
+          "clickbait": 0.98
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "fake-filler-ai",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 613,
+      "verdict": {
+        "id": "fake-filler-ai",
+        "category": "ai-slop",
+        "confidence": 0.86,
+        "reasons": [
+          "Likely low-value content with signs of synthetic generation."
+        ],
+        "signals": {
+          "lowQuality": 0.97,
+          "synthetic": 0.98,
+          "clickbait": 0.84
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "comment-link-spam",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 489,
+      "verdict": {
+        "id": "comment-link-spam",
+        "category": "human-slop",
+        "confidence": 0.94,
+        "reasons": [
+          "Likely low-value content or spam. Its authorship is unknown.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.99,
+          "synthetic": 0.1,
+          "clickbait": 0.99
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "portuguese-phishing",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 538,
+      "verdict": {
+        "id": "portuguese-phishing",
+        "category": "human-slop",
+        "confidence": 0.92,
+        "reasons": [
+          "Likely low-value content or spam. Its authorship is unknown.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.98,
+          "synthetic": 0.07,
+          "clickbait": 0.95
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "spanish-doorway",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 471,
+      "verdict": {
+        "id": "spanish-doorway",
+        "category": "slop",
+        "confidence": 0.86,
+        "reasons": [
+          "Likely low-value content; its authorship is unclear.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.97,
+          "synthetic": 0.3,
+          "clickbait": 0.95
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "injected-prize",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 673,
+      "verdict": {
+        "id": "injected-prize",
+        "category": "slop",
+        "confidence": 0.93,
+        "reasons": [
+          "Likely low-value content; its authorship is unclear.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.98,
+          "synthetic": 0.27,
+          "clickbait": 0.98
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    },
+    {
+      "id": "engagement-chain",
+      "expected": "filter",
+      "actual": "filter",
+      "passed": true,
+      "elapsedMs": 458,
+      "verdict": {
+        "id": "engagement-chain",
+        "category": "human-slop",
+        "confidence": 0.88,
+        "reasons": [
+          "Likely low-value content or spam. Its authorship is unknown.",
+          "The model found signs of a misleading hook or engagement bait."
+        ],
+        "signals": {
+          "lowQuality": 0.98,
+          "synthetic": 0.09,
+          "clickbait": 0.98
+        },
+        "evidence": {
+          "text": true,
+          "thumbnail": false,
+          "destination": false
+        },
+        "model": "typesafe/jev-1.13-20260917"
+      },
+      "errors": []
+    }
+  ]
+}
