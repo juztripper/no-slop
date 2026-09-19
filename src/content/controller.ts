@@ -1,4 +1,4 @@
-import { AnalyzeResponseSchema, DEFAULT_SETTINGS, EMPTY_STATS, isAllowlisted, shouldFilter, type PageStats, type RuntimeMessage, type Settings, type Verdict } from '../shared/contracts';
+import { AnalysisDeferredSchema, AnalyzeResponseSchema, DEFAULT_SETTINGS, EMPTY_STATS, isAllowlisted, shouldFilter, type PageStats, type RuntimeMessage, type Settings, type Verdict } from '../shared/contracts';
 import { extractCandidates, isEligibleContentUnit, isPrivatePage, platformForUrl, type Candidate } from './adapters';
 import { presentCandidate, type Presentation } from './presentation';
 
@@ -18,6 +18,7 @@ export class ContentController {
   private intersection?: IntersectionObserver;
   private timer?: ReturnType<typeof setTimeout>;
   private batchTimer?: ReturnType<typeof setTimeout>;
+  private retryTimer?: ReturnType<typeof setTimeout>;
   private urlTimer?: ReturnType<typeof setInterval>;
   private generation = 0;
   private active = 0;
@@ -79,6 +80,7 @@ export class ContentController {
   private onNavigation = () => {
     if (this.lastUrl === this.win.location.href) return;
     this.generation++;
+    clearTimeout(this.retryTimer);
     this.restoreAll();
     this.records.clear();
     this.queue.clear();
@@ -205,6 +207,24 @@ export class ContentController {
         new Promise<never>((_, reject) => { requestTimeout = setTimeout(() => reject(new Error('The detector timed out. Original content remains visible. Rescan to retry.')), 30_000); }),
       ]);
       if (this.disposed || generation !== this.generation || pageUrl !== this.win.location.href || !this.allowed()) return;
+      const deferred = AnalysisDeferredSchema.safeParse(response);
+      if (deferred.success) {
+        this.cooldownUntil = Date.now() + deferred.data.retryAfterMs;
+        for (const record of this.records.values()) if (record.state === 'queued') record.state = 'waiting';
+        this.queue.clear();
+        clearTimeout(this.retryTimer);
+        this.setStatus('waiting');
+        this.retryTimer = setTimeout(() => {
+          this.retryTimer = undefined;
+          if (this.disposed || generation !== this.generation || !this.allowed()) return;
+          // Re-extract visible content: feeds may have recycled nodes while waiting.
+          this.scan();
+          if (generation !== this.generation || !this.allowed()) return;
+          if (this.queue.size) void this.drain();
+          else this.setStatus('ready');
+        }, deferred.data.retryAfterMs + 50);
+        return;
+      }
       const parsed = AnalyzeResponseSchema.safeParse(response);
       if (!parsed.success) throw new Error(response && typeof response === 'object' && 'error' in response && typeof response.error === 'string' ? response.error : 'The detector returned an invalid response.');
       const verdicts = new Map(parsed.data.verdicts.map(verdict => [verdict.id, verdict]));
@@ -255,6 +275,7 @@ export class ContentController {
   }
 
   updateSettings(settings: Settings): void {
+    clearTimeout(this.retryTimer);
     const inferenceChanged = this.settings.inspectThumbnails !== settings.inspectThumbnails || this.settings.inspectDestinations !== settings.inspectDestinations || this.settings.endpoint !== settings.endpoint || this.settings.serviceToken !== settings.serviceToken;
     this.settings = settings;
     this.generation++;
@@ -274,6 +295,7 @@ export class ContentController {
   }
 
   restorePage(): void {
+    clearTimeout(this.retryTimer);
     this.generation++;
     this.restored = true;
     this.queue.clear();
@@ -282,6 +304,7 @@ export class ContentController {
   }
 
   rescan(): void {
+    clearTimeout(this.retryTimer);
     this.generation++;
     this.restored = false;
     this.cooldownUntil = 0;
@@ -321,6 +344,7 @@ export class ContentController {
     this.intersection?.disconnect();
     clearTimeout(this.timer);
     clearTimeout(this.batchTimer);
+    clearTimeout(this.retryTimer);
     clearInterval(this.urlTimer);
     this.win.removeEventListener('scroll', this.onScroll);
     this.win.removeEventListener('popstate', this.onNavigation);

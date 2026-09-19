@@ -160,11 +160,13 @@ export function Popup() {
                   : "Unsupported page"
                 : tab.stats.status === "scanning"
                   ? "Checking…"
-                  : tab.stats.status === "ready"
-                    ? "Up to date"
-                    : tab.stats.status === "error"
-                      ? "Needs attention"
-                      : "Ready to scan"}
+                  : tab.stats.status === "waiting"
+                    ? "Resuming shortly…"
+                    : tab.stats.status === "ready"
+                      ? "Up to date"
+                      : tab.stats.status === "error"
+                        ? "Needs attention"
+                        : "Ready to scan"}
         </span>
       </div>
       {tab.stats.error && (

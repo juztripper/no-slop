@@ -24,6 +24,11 @@ export type Verdict = z.infer<typeof VerdictSchema>;
 export const AnalyzeRequestSchema = z.object({ items: z.array(ContentItemSchema).min(1).max(8), inspectThumbnails: z.boolean().default(true), inspectDestinations: z.boolean().default(false) }).strict();
 export const AnalyzeResponseSchema = z.object({ verdicts: z.array(VerdictSchema), errors: z.array(z.object({ id: z.string(), message: z.string() })).default([]) });
 export type AnalyzeResponse = z.infer<typeof AnalyzeResponseSchema>;
+export const AnalysisDeferredSchema = z.object({
+  status: z.literal('deferred'),
+  reason: z.enum(['pacing', 'rate-limit', 'busy']),
+  retryAfterMs: z.number().int().min(1).max(3_600_000),
+});
 
 export const SettingsSchema = z.object({
   enabled: z.boolean().default(true), aiSlop: z.boolean().default(true), humanSlop: z.boolean().default(true),
@@ -38,7 +43,7 @@ export const SettingsSchema = z.object({
 export type Settings = z.infer<typeof SettingsSchema>;
 export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
 
-export interface PageStats { scanned: number; filtered: number; uncertain: number; status: 'idle'|'scanning'|'ready'|'error'|'paused'; error?: string; }
+export interface PageStats { scanned: number; filtered: number; uncertain: number; status: 'idle'|'scanning'|'waiting'|'ready'|'error'|'paused'; error?: string; }
 export const EMPTY_STATS: PageStats = { scanned:0, filtered:0, uncertain:0, status:'idle' };
 export type RuntimeMessage =
   | { type:'GET_SETTINGS' }

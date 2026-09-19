@@ -117,8 +117,20 @@ describe('extension trust boundary', () => {
   it('fails open on an unavailable or malformed detector', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response('unavailable',{status:503}));
     expect(await send({type:'ANALYZE',items:[item]},content)).toHaveProperty('error');
+    delete session.detectorPacing;
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({verdicts:[{id:'first',category:'ai-slop',confidence:5}]})));
     expect(await send({type:'ANALYZE',items:[item]},content)).toHaveProperty('error');
+  });
+  it('shares a server cooldown across tabs without sending repeated requests', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{}',{status:429,headers:{'Retry-After':'23'}}));
+    expect(await send({type:'ANALYZE',items:[item]},content)).toEqual({status:'deferred',reason:'rate-limit',retryAfterMs:24000});
+    expect(await send({type:'ANALYZE',items:[item]},{...content,tab:{id:2}})).toMatchObject({status:'deferred',reason:'pacing'});
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it('admits only one simultaneous batch across tabs', async () => {
+    const results = await Promise.all([1,2,3].map(id => send({type:'ANALYZE',items:[item]},{...content,tab:{id}})));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(results.filter(result=>result.status === 'deferred')).toHaveLength(2);
   });
   it('does not store feed snippets with page counters', async () => {
     await send({type:'PAGE_STATS',stats:{scanned:5,filtered:2,uncertain:1,status:'ready'}},content);

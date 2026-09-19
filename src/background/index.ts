@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AnalyzeRequestSchema, AnalyzeResponseSchema, DEFAULT_SETTINGS, EMPTY_STATS, SettingsSchema, isAllowlisted, type Settings, type PageStats } from '../shared/contracts';
 import { isSensitivePage, normalizeDomain, normalizeEndpoint, publicContentUrl } from '../shared/security';
+import { RequestPacer, retryDelay } from './pacing';
 
 // Keep service credentials out of content scripts and Chrome Sync.
 void chrome.storage.local.setAccessLevel({ accessLevel:'TRUSTED_CONTEXTS' });
@@ -9,6 +10,7 @@ let saveQueue: Promise<unknown> = Promise.resolve();
 const requests = new Map<number, Set<AbortController>>();
 const inFlight = new Set<number>();
 let activeRequests = 0;
+const pacer = new RequestPacer(chrome.storage.session, () => Date.now());
 
 async function getSettings(): Promise<Settings> {
   const data = await chrome.storage.local.get('settings');
@@ -47,7 +49,7 @@ async function saveSettings(patch: unknown) {
   return settings;
 }
 
-const StatsSchema = z.object({ scanned:z.number().int().min(0).max(100000), filtered:z.number().int().min(0).max(100000), uncertain:z.number().int().min(0).max(100000), status:z.enum(['idle','scanning','ready','error','paused']), error:z.string().max(200).optional() });
+const StatsSchema = z.object({ scanned:z.number().int().min(0).max(100000), filtered:z.number().int().min(0).max(100000), uncertain:z.number().int().min(0).max(100000), status:z.enum(['idle','scanning','waiting','ready','error','paused']), error:z.string().max(200).optional() });
 async function updateStats(tabId: number, stats: PageStats) {
   await chrome.storage.session.set({ [`tab:${tabId}`]: stats });
   await chrome.action.setBadgeText({ tabId, text: stats.filtered ? String(stats.filtered) : '' });
@@ -62,7 +64,7 @@ async function analyze(message: Record<string, unknown>, sender: chrome.runtime.
   const request = AnalyzeRequestSchema.parse({ items:message.items, inspectThumbnails:settings.inspectThumbnails, inspectDestinations:settings.inspectDestinations });
   request.items = request.items.filter(item => settings.platforms[item.platform]).map(item => ({ ...item, url:publicContentUrl(item.url, settings.inspectDestinations), thumbnailUrl:settings.inspectThumbnails ? item.thumbnailUrl : undefined }));
   if (!request.items.length) return { verdicts:[], errors:[] };
-  if (activeRequests >= 4 || inFlight.has(tabId)) throw new Error('Detector is busy. Try again shortly.');
+  if (activeRequests >= 4 || inFlight.has(tabId)) return { status:'deferred', reason:'busy', retryAfterMs:2000 };
   const controller = new AbortController();
   const controllers = requests.get(tabId) || new Set<AbortController>();
   controllers.add(controller); requests.set(tabId, controllers); inFlight.add(tabId); activeRequests++;
@@ -70,12 +72,21 @@ async function analyze(message: Record<string, unknown>, sender: chrome.runtime.
   let timedOut = false;
   const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 28000);
   try {
-    const response = await fetch(`${normalizeEndpoint(settings.endpoint)}/v1/analyze`, {
+    const endpoint = normalizeEndpoint(settings.endpoint);
+    const delay = await pacer.reserve(endpoint);
+    controller.signal.throwIfAborted();
+    if (delay) return { status:'deferred', reason:'pacing', retryAfterMs:delay };
+    const response = await fetch(`${endpoint}/v1/analyze`, {
       method:'POST', headers:{ 'Content-Type':'application/json', ...(settings.serviceToken ? { Authorization:`Bearer ${settings.serviceToken}` } : {}) },
       body:JSON.stringify(request), signal:controller.signal, credentials:'omit', redirect:'error', cache:'no-store',
     });
     if (!response.ok) {
-      if (response.status === 429) throw new Error('The free detector has reached its limit. Content stays visible.');
+      if (response.status === 429) {
+        const retryAfterMs = retryDelay(response.headers.get('Retry-After'));
+        await pacer.defer(endpoint, retryAfterMs);
+        controller.signal.throwIfAborted();
+        return { status:'deferred', reason:'rate-limit', retryAfterMs };
+      }
       if (response.status === 401 || response.status === 403) throw new Error('Service access denied. Check your service token in settings.');
       throw new Error(`Detector unavailable (${response.status}). Content stays visible.`);
     }

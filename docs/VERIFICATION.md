@@ -4,7 +4,9 @@ Verified locally on 19 September 2026. This file distinguishes implemented behav
 
 ## Automated checks
 
-`npm run check` passed: strict TypeScript, **136 tests across 12 files**, the extension production build, and the compiled service build. The suite covers settings persistence, extension message trust, consent revocation, secret redaction, queue/deadline behavior, stale/recycled nodes, privacy paths, full-card boundaries, restored app styles, nested replies, focus safety, reduced motion, SSRF and redirects, schema failures, provider errors, CORS, authentication, quotas, and caching.
+`npm run check` passed: strict TypeScript, **148 tests across 13 files**, the extension production build, and the compiled service build. The suite covers settings persistence, extension message trust, consent revocation, secret redaction, queue/deadline behavior, stale/recycled nodes, privacy paths, full-card boundaries, restored app styles, nested replies, focus safety, reduced motion, SSRF and redirects, schema failures, provider errors, CORS, authentication, quotas, and caching.
+
+Rate-limit regressions simulate sustained requests from four tabs and verify at most 30 admitted batches per minute, shared server cooldowns, worker-restart persistence, automatic retries without user activity, re-extraction of recycled cards, offscreen deferral, and cancellation after pause, consent revocation, restore or disposal. These are automated timing/integration tests; the refreshed unpacked extension still needs reloading in the user's browser for live confirmation.
 
 The production build scans every output file for configured credentials and rejects any packaged environment file. `npm audit --audit-level=moderate` reported no known vulnerabilities at verification time. The compiled service was started separately and its health endpoint responded successfully. Docker configuration is supplied, but a Docker runtime was not available for a container smoke test in this environment.
 

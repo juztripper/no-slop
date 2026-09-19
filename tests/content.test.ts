@@ -306,3 +306,67 @@ describe('page lifecycle and bounded work', () => {
     expect(runtime.send.mock.calls.filter(([message]) => message.type === 'ANALYZE')).toHaveLength(1);
   });
 });
+
+describe('automatic deferred analysis recovery', () => {
+  it('resumes without scrolling or pressing Scan again and counts the item once', async () => {
+    let attempts = 0;
+    const runtime = bridge(settings(), async items => ++attempts <= 3
+      ? { status:'deferred', reason:'rate-limit', retryAfterMs:1000 }
+      : { verdicts:items.map(item=>verdict(item.id)) });
+    const controller = await start(runtime);
+    expect(controller.pageStats.status).toBe('waiting');
+    expect(controller.pageStats.error).toBeUndefined();
+    expect(controller.pageStats.scanned).toBe(0);
+    await vi.advanceTimersByTimeAsync(900);
+    expect(attempts).toBe(1);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(attempts).toBe(4);
+    expect(controller.pageStats).toMatchObject({status:'ready',scanned:1,filtered:1});
+  });
+
+  it('re-extracts recycled content instead of applying a stale deferred decision', async () => {
+    const analyzed: ContentItem[][] = [];
+    const runtime = bridge(settings(), async items => {
+      analyzed.push(items);
+      return analyzed.length === 1 ? {status:'deferred',reason:'pacing',retryAfterMs:1000}
+        : {verdicts:items.map(item=>verdict(item.id,{category:'quality'}))};
+    });
+    const controller = await start(runtime);
+    const title = document.querySelector('#video-title')!;
+    title.textContent = 'A different careful tutorial that arrived while waiting';
+    title.setAttribute('href','/watch?v=zyxwvutsrqp');
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(analyzed).toHaveLength(2);
+    expect(analyzed[1][0].title).toContain('different careful tutorial');
+    expect(controller.pageStats).toMatchObject({scanned:1,filtered:0,status:'ready'});
+  });
+
+  it.each(['pause','revoke','restore','dispose'] as const)('cancels a scheduled retry on %s', async action => {
+    let attempts = 0;
+    const runtime = bridge(settings(), async () => {
+      attempts++;
+      return {status:'deferred',reason:'rate-limit',retryAfterMs:1000};
+    });
+    const controller = await start(runtime);
+    if (action === 'pause') controller.updateSettings(settings({enabled:false}));
+    if (action === 'revoke') controller.updateSettings(settings({consent:false}));
+    if (action === 'restore') controller.restorePage();
+    if (action === 'dispose') controller.dispose();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(attempts).toBe(1);
+  });
+
+  it('does not retry content that has scrolled away during the cooldown', async () => {
+    let attempts = 0;
+    const controller = await start(bridge(settings(), async () => {
+      attempts++;
+      return {status:'deferred',reason:'pacing',retryAfterMs:1000};
+    }));
+    const element = document.querySelector('ytd-video-renderer')!;
+    vi.spyOn(element,'getBoundingClientRect').mockReturnValue({top:3000,bottom:3100,height:100,left:0,right:500,width:500,x:0,y:3000,toJSON:()=>({})});
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(attempts).toBe(1);
+    expect(controller.pageStats.filtered).toBe(0);
+    expect(controller.pageStats.status).toBe('ready');
+  });
+});
