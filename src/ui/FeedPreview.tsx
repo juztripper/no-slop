@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Badge, Button } from "@radix-ui/themes";
 import { Eye, RotateCcw, Youtube } from "lucide-react";
 import type { Settings } from "../shared/contracts";
 
@@ -113,7 +114,7 @@ export function FeedPreview({ settings }: { settings: Settings }) {
         <span>
           <Youtube size={18} /> A little less noise
         </span>
-        <span className="demo-pill">Example feed</span>
+        <Badge className="demo-pill" color="gray" variant="surface" size="1">Example feed</Badge>
       </div>
       <div className="preview-feed">
         <div className="feed-row">
@@ -149,9 +150,9 @@ export function FeedPreview({ settings }: { settings: Settings }) {
                 <div>
                   <strong>Likely AI slop</strong>
                   <span>Low effort. Big promises.</span>
-                  <button onClick={() => setRevealed(true)}>
+                  <Button size="1" variant="ghost" color="gray" onClick={() => setRevealed(true)}>
                     <Eye size={12} /> Show anyway
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -177,9 +178,9 @@ export function FeedPreview({ settings }: { settings: Settings }) {
               : "A softer stop. You stay in control."
             : "All example results are visible."}
         </span>
-        <button onClick={run}>
+        <Button size="1" variant="ghost" color="gray" onClick={run}>
           <RotateCcw size={13} /> Replay
-        </button>
+        </Button>
       </div>
       <p className="preview-disclaimer">
         Illustration only. These examples are pre-labeled; no detector is

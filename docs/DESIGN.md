@@ -1,21 +1,27 @@
 # NO SLOP design
 
-The extension behaves like a thoughtful margin note: it makes a judgment visible, explains it, and leaves the reader in control. The central visual device is an ink stamp, used sparingly on the brand mark and censored content.
+The extension behaves like a thoughtful margin note: it makes a judgment visible, explains it, and leaves the reader in control. Its interface uses Radix Themes with a gray accent, neutral white and gray surfaces, charcoal text, and medium radius. The original red stamp provides the brand color. Preserve the established layout and refine how these elements blend together.
 
 ## Foundations
 
-| Token    | Value     | Use                           |
-| -------- | --------- | ----------------------------- |
-| Cloud    | `#FCFCFE` | Main working surface          |
-| Lavender | `#F3F0F8` | App canvas and quiet controls |
-| Graphite | `#29242F` | Primary text                  |
-| Ink red  | `#BD3049` | Active filters and the stamp  |
-| Oxblood  | `#93243A` | Pressed controls and emphasis |
-| Plum     | `#6C456E` | Navigation and supporting UI  |
+| Token | Value | Use |
+| --- | --- | --- |
+| White | `#FFFFFF` | Main surfaces |
+| Gray 2 | `#F9F9F9` | Quiet canvas and inset surfaces |
+| Gray 6 | `#E4E4E4` | Boundaries between functional regions |
+| Gray 11 | `#646464` | Supporting copy |
+| Gray 12 | `#202020` | Primary text and brand letterforms |
+| Stamp red | `#BD3049` | Original brand mark and censorship treatment |
+| Stamp wash | `#FCF5F6` | Quiet background behind a quality note or stamp |
+| Stamp line | `#EBC8CF` | Boundaries within the stamp treatment |
 
-The wordmark uses a heavy system sans with tight spacing. Interface copy uses the platform's system font. There are no remote fonts or image dependencies. The mark is an original `NS` monogram; the preview thumbnails are original vector illustrations.
+Use the real Radix Themes components and semantic color scales rather than imitating them with unrelated control styles. Set the theme to `accentColor="gray"`, `grayColor="gray"`, and `radius="medium"`, with high-contrast switches. Primary actions and selection use the neutral ink palette; reserve red for the original mark and content filtering. Component state colors, focus rings, contrast, and spacing should come from the theme.
 
-The layout follows the job: four persistent settings destinations, one reading pane, a working preview beside the filter controls, and a compact extension popup. Settings are grouped by user decisions, rather than equal-sized dashboard cards. The popover uses real tab statistics only; the browser preview is explicitly labeled and never contacts the detector.
+Typography is **Inter Variable**, using 400 for body copy, 500 for labels and interface headings, and 600 for emphasis. The **900-weight wordmark** retains the original brand's strong silhouette. Keep the UI in sentence case; uppercase belongs to the product name and stamp. The variable font is packaged locally through Fontsource, with no runtime font requests to a third party.
+
+The original mark stays unchanged: a white `NS` monogram, rotated slightly inside its red rounded stamp tile. Preserve its proportions, corner radius, stroke weight, and red when generating browser icons or placing it in the interface. The README masthead embeds that exact mark with Inter letterforms on white. Its text is outlined in the SVG from the packaged font so it renders consistently without depending on installed fonts or remote resources. The source includes an accessible title and description. Avoid introducing a competing accent color, alternate logo, or new layout treatment.
+
+The accepted layout stays intact: four persistent settings destinations, one reading pane, a working preview beside the filter controls, and a compact extension popup. Settings are grouped by user decisions, rather than equal-sized dashboard cards. The popover uses real tab statistics only; the browser preview is explicitly labeled and never contacts the detector. Keep spacing and hierarchy calm; use borders to separate controls and content, not as decoration.
 
 ## Content and behavior
 

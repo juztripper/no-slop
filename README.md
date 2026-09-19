@@ -8,10 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/license-AGPL--3.0-742034?style=flat-square" /></a>
-  <img alt="Chromium Manifest V3" src="https://img.shields.io/badge/Chromium-Manifest_V3-51456D?style=flat-square" />
+  <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/license-AGPL--3.0-202020?style=flat-square" /></a>
+  <img alt="Chromium Manifest V3" src="https://img.shields.io/badge/Chromium-Manifest_V3-646464?style=flat-square" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" />
-  <a href="CONTRIBUTING.md"><img alt="Contributions welcome" src="https://img.shields.io/badge/contributions-welcome-C5354D?style=flat-square" /></a>
+  <a href="CONTRIBUTING.md"><img alt="Contributions welcome" src="https://img.shields.io/badge/contributions-welcome-bd3049?style=flat-square" /></a>
 </p>
 
 <p align="center">
@@ -125,5 +125,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), then open a focused issue or pull reque
 Hosted analysis is opt-in. Read the [privacy document](PRIVACY.md) before enabling it. For vulnerabilities, read [SECURITY.md](SECURITY.md). The service operator must publish their actual contact details, hosting practices, and provider disclosures before public launch.
 
 NO SLOP is licensed under [AGPL-3.0-only](LICENSE). Modified network-hosted versions must meet the license's source-sharing requirements. Jev and the selected vision models are external services with their own terms; they are not bundled or relicensed by this project.
+
+The interface uses [Radix Themes](https://www.radix-ui.com/themes) and locally packaged [Inter](https://rsms.me/inter/). Their MIT and SIL Open Font licenses are included in [`public/licenses/`](public/licenses/) and the extension build. See the [design guide](docs/DESIGN.md) for interface conventions.
 
 Built with [TypeSafe Jev](https://docs.typesafe.ai/concepts/system-one), [OpenRouter](https://openrouter.ai/~typesafe/jev-latest), TypeScript, React, and Manifest V3.

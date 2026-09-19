@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { RadioCards, SegmentedControl, Switch } from "@radix-ui/themes";
 import { Check, EyeOff, Stamp } from "lucide-react";
 import type { Settings } from "../shared/contracts";
 
@@ -32,24 +33,24 @@ export function Toggle({
   return (
     <div className={`toggle-row ${small ? "toggle-small" : ""}`}>
       <label htmlFor={id}>
-        <span className="control-label">{label}</span>
+        <span className="control-label" id={`${id}-label`}>{label}</span>
         {description && (
           <span className="control-description" id={`${id}-description`}>
             {description}
           </span>
         )}
       </label>
-      <button
+      <Switch
         id={id}
         className="switch"
-        role="switch"
-        aria-checked={checked}
+        size={small ? "1" : "2"}
+        highContrast
+        checked={checked}
+        aria-labelledby={`${id}-label`}
         aria-describedby={description ? `${id}-description` : undefined}
-        onClick={() => onChange(!checked)}
+        onCheckedChange={onChange}
         disabled={disabled}
-      >
-        <span />
-      </button>
+      />
     </div>
   );
 }
@@ -63,37 +64,68 @@ export function ModeControl({
   update: (patch: Partial<Settings>) => unknown;
   compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <SegmentedControl.Root
+        className="mode-control mode-compact"
+        size="2"
+        value={settings.mode}
+        onValueChange={(mode) => {
+          if (mode === "censor" || mode === "hide") update({ mode });
+        }}
+        aria-label="What to do with detected content"
+      >
+        <SegmentedControl.Item value="censor">
+          <span className="mode-option-label">
+            <Stamp size={16} /> Censor
+          </span>
+        </SegmentedControl.Item>
+        <SegmentedControl.Item value="hide">
+          <span className="mode-option-label">
+            <EyeOff size={16} /> Hide
+          </span>
+        </SegmentedControl.Item>
+      </SegmentedControl.Root>
+    );
+  }
   return (
-    <div
-      className={`mode-control ${compact ? "mode-compact" : ""}`}
-      role="group"
+    <RadioCards.Root
+      className="mode-control"
+      size="1"
+      highContrast
+      columns="2"
+      gap="2"
+      value={settings.mode}
+      onValueChange={(mode) => {
+        if (mode === "censor" || mode === "hide") update({ mode });
+      }}
       aria-label="What to do with detected content"
     >
-      <button
-        aria-pressed={settings.mode === "censor"}
-        className={settings.mode === "censor" ? "selected" : ""}
-        onClick={() => update({ mode: "censor" })}
+      <RadioCards.Item
+        value="censor"
+        className={`mode-option ${settings.mode === "censor" ? "selected" : ""}`}
       >
         <Stamp size={19} />
-        <span>
-          Censor{!compact && <small>Cover it. Keep the choice.</small>}
+        <span className="mode-option-copy">
+          Censor<small>Cover it. Keep the choice.</small>
         </span>
-        {!compact && settings.mode === "censor" && (
-          <Check size={16} className="mode-check" />
+        {settings.mode === "censor" && (
+          <Check size={16} className="mode-check" aria-hidden="true" />
         )}
-      </button>
-      <button
-        aria-pressed={settings.mode === "hide"}
-        className={settings.mode === "hide" ? "selected" : ""}
-        onClick={() => update({ mode: "hide" })}
+      </RadioCards.Item>
+      <RadioCards.Item
+        value="hide"
+        className={`mode-option ${settings.mode === "hide" ? "selected" : ""}`}
       >
         <EyeOff size={19} />
-        <span>Hide{!compact && <small>Make it disappear.</small>}</span>
-        {!compact && settings.mode === "hide" && (
-          <Check size={16} className="mode-check" />
+        <span className="mode-option-copy">
+          Hide<small>Make it disappear.</small>
+        </span>
+        {settings.mode === "hide" && (
+          <Check size={16} className="mode-check" aria-hidden="true" />
         )}
-      </button>
-    </div>
+      </RadioCards.Item>
+    </RadioCards.Root>
   );
 }
 
@@ -119,18 +151,28 @@ export function Sensitivity({
           {Math.round(settings.threshold * 100)}% confidence
         </span>
       </div>
-      <div className="segmented" role="group" aria-label="Filter strength">
+      <SegmentedControl.Root
+        className="segmented"
+        size="2"
+        value={String(settings.threshold)}
+        onValueChange={(value) => {
+          const preset = presets.find(
+            (candidate) => String(candidate.value) === value,
+          );
+          if (preset) update({ threshold: preset.value });
+        }}
+        aria-label="Filter strength"
+      >
         {presets.map((preset) => (
-          <button
+          <SegmentedControl.Item
             key={preset.label}
+            value={String(preset.value)}
             className={settings.threshold === preset.value ? "active" : ""}
-            aria-pressed={settings.threshold === preset.value}
-            onClick={() => update({ threshold: preset.value })}
           >
             {preset.label}
-          </button>
+          </SegmentedControl.Item>
         ))}
-      </div>
+      </SegmentedControl.Root>
       {!compact && (
         <p className="control-description">
           {settings.threshold >= 0.95

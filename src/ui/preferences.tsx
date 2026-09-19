@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Button, Callout, IconButton, TextField } from "@radix-ui/themes";
 import { Globe2, Heart, LockKeyhole, ShieldCheck, X } from "lucide-react";
 import type { Settings, Platform } from "../shared/contracts";
 import { request } from "./bridge";
@@ -69,16 +70,18 @@ export function FilterSettings({
         </div>
         <div className="preview-column">
           <FeedPreview settings={settings} />
-          <div className="consideration">
-            <ShieldCheck size={20} />
+          <Callout.Root className="consideration" size="1" color="gray">
+            <Callout.Icon>
+              <ShieldCheck size={20} />
+            </Callout.Icon>
             <div>
               <strong>Quality is a judgment. Yours comes first.</strong>
-              <p>
+              <Callout.Text>
                 Using AI doesn’t automatically make something slop. Uncertain
                 results stay, and censored content can always be revealed.
-              </p>
+              </Callout.Text>
             </div>
-          </div>
+          </Callout.Root>
         </div>
       </div>
       <section className="preferences-section">
@@ -173,7 +176,9 @@ export function SitesSettings({
           <label className="sr-only" htmlFor="domain">
             Site domain
           </label>
-          <input
+          <TextField.Root
+            className="domain-input"
+            size="2"
             id="domain"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
@@ -181,19 +186,30 @@ export function SitesSettings({
             autoCapitalize="none"
             autoComplete="off"
             spellCheck={false}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "domain-error" : undefined}
           />
-          <button
+          <Button
             className="button button-primary"
+            highContrast
+            size="2"
+            variant="solid"
             type="submit"
             disabled={!domain.trim()}
           >
             Add exception
-          </button>
+          </Button>
         </form>
         {error && (
-          <p className="error-message" role="alert">
-            {error}
-          </p>
+          <Callout.Root
+            className="error-message"
+            color="red"
+            size="1"
+            role="alert"
+            id="domain-error"
+          >
+            <Callout.Text>{error}</Callout.Text>
+          </Callout.Root>
         )}
         {settings.allowlist.length === 0 ? (
           <p className="empty-state">
@@ -206,8 +222,11 @@ export function SitesSettings({
               <li key={site}>
                 <Globe2 size={15} />
                 <span>{site}</span>
-                <button
+                <IconButton
                   className="icon-button"
+                  size="1"
+                  variant="ghost"
+                  color="gray"
                   aria-label={`Remove exception for ${site}`}
                   onClick={() =>
                     update({
@@ -218,7 +237,7 @@ export function SitesSettings({
                   }
                 >
                   <X size={16} />
-                </button>
+                </IconButton>
               </li>
             ))}
           </ul>
@@ -315,23 +334,27 @@ export function PrivacySettings({
           shared, then turn on content analysis.
         </p>
       </div>
-      <div className="privacy-callout">
-        <LockKeyhole size={23} />
+      <Callout.Root className="privacy-callout" size="2">
+        <Callout.Icon>
+          <LockKeyhole size={23} />
+        </Callout.Icon>
         <div>
           <h2>Your API key stays on your server.</h2>
-          <p>
+          <Callout.Text>
             The extension talks to a detector service. That service calls the
             model provider. Never put your OpenRouter key in the extension.
-          </p>
+          </Callout.Text>
         </div>
-      </div>
+      </Callout.Root>
       <section className="connection-section">
         <h2>Detector connection</h2>
         <form onSubmit={saveConnection}>
           <label className="field-label" htmlFor="endpoint">
             Service URL
           </label>
-          <input
+          <TextField.Root
+            className="service-input"
+            size="3"
             id="endpoint"
             type="url"
             value={endpoint}
@@ -339,15 +362,18 @@ export function PrivacySettings({
             placeholder="https://your-detector.example"
             autoComplete="url"
             spellCheck={false}
+            aria-describedby="endpoint-hint"
           />
-          <p className="field-hint">
+          <p className="field-hint" id="endpoint-hint">
             The local default is ready for self-hosting. A free public detector
             has not been configured in this build.
           </p>
           <label className="field-label" htmlFor="service-token">
             Service access token <span>Optional</span>
           </label>
-          <input
+          <TextField.Root
+            className="service-input"
+            size="3"
             id="service-token"
             type="password"
             value={token}
@@ -355,35 +381,43 @@ export function PrivacySettings({
             placeholder="Provided by the detector operator"
             autoComplete="off"
             spellCheck={false}
+            aria-describedby="service-token-hint"
           />
-          <p className="field-hint">
+          <p className="field-hint" id="service-token-hint">
             A service token, not an OpenRouter API key. Stored locally in this
             browser.
           </p>
           <div className="button-row">
-            <button
+            <Button
               className="button button-primary"
+              highContrast
+              size="2"
+              variant="solid"
               type="submit"
               disabled={!dirty || busy}
             >
               Save connection
-            </button>
-            <button
+            </Button>
+            <Button
               className="button button-secondary"
+              size="2"
+              variant="soft"
               type="button"
               disabled={busy}
               onClick={testConnection}
             >
               {busy ? "Checking…" : "Test connection"}
-            </button>
+            </Button>
           </div>
           {connection && (
-            <p
+            <Callout.Root
               role="status"
+              size="1"
+              color={connectionError ? "red" : "gray"}
               className={connectionError ? "error-message" : "success-message"}
             >
-              {connection}
-            </p>
+              <Callout.Text>{connection}</Callout.Text>
+            </Callout.Root>
           )}
         </form>
       </section>

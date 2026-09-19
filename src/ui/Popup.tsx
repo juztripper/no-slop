@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button, Callout, IconButton } from "@radix-ui/themes";
 import {
   ChevronRight,
   Info,
@@ -74,18 +75,24 @@ export function Popup() {
     <main className="popup">
       <header className="popup-header">
         <Logo compact />
-        <button
+        <IconButton
           className="icon-button"
+          size="2"
+          variant="ghost"
+          color="gray"
           aria-label="Open settings"
           onClick={openOptions}
         >
           <Settings2 size={20} />
-        </button>
+        </IconButton>
       </header>
       {!isExtension && (
-        <div className="popup-demo">
-          <Info size={13} /> Popup preview. No live detection.
-        </div>
+        <Callout.Root className="popup-demo" size="1" color="gray">
+          <Callout.Icon>
+            <Info size={14} />
+          </Callout.Icon>
+          <Callout.Text>Popup preview. No live detection.</Callout.Text>
+        </Callout.Root>
       )}
       <div className="popup-site">
         <div>
@@ -103,14 +110,19 @@ export function Popup() {
         />
       </div>
       {!settings.consent && (
-        <button className="popup-setup" onClick={openOptions}>
+        <Button
+          className="popup-setup"
+          variant="soft"
+          size="2"
+          onClick={openOptions}
+        >
           <ShieldCheck size={19} />
           <span>
             <strong>Set up your detector</strong>
             <span>Connect and review privacy to start.</span>
           </span>
           <ChevronRight size={16} />
-        </button>
+        </Button>
       )}
       <section className="popup-filters" aria-label="Content filters">
         <Toggle
@@ -155,15 +167,30 @@ export function Popup() {
                       : "Ready to scan"}
         </span>
       </div>
-      {tab.stats.error && <p className="error-message">{tab.stats.error}</p>}
+      {tab.stats.error && (
+        <Callout.Root
+          className="error-message"
+          color="red"
+          size="1"
+          role="alert"
+        >
+          <Callout.Text>{tab.stats.error}</Callout.Text>
+        </Callout.Root>
+      )}
       <div className="popup-page-actions">
-        <button
+        <Button
+          size="1"
+          variant="soft"
+          color="gray"
           disabled={busy || !hostname}
           onClick={() => pageAction("RESTORE_PAGE")}
         >
           <Undo2 size={15} /> Restore page
-        </button>
-        <button
+        </Button>
+        <Button
+          size="1"
+          variant="soft"
+          color="gray"
           disabled={
             busy ||
             !pageEligible ||
@@ -174,7 +201,7 @@ export function Popup() {
           onClick={() => pageAction("RESCAN_PAGE")}
         >
           <RotateCcw size={15} /> Scan again
-        </button>
+        </Button>
       </div>
       <div className="popup-pause">
         <Toggle
@@ -201,9 +228,9 @@ export function Popup() {
       </div>
       <footer className="popup-footer">
         <span>Good stuff gets through.</span>
-        <button onClick={openOptions}>
+        <Button size="1" variant="ghost" onClick={openOptions}>
           All settings <ChevronRight size={13} />
-        </button>
+        </Button>
       </footer>
     </main>
   );
