@@ -2,6 +2,8 @@
 
 NO SLOP needs careful examples and reliable adapters as much as code. Useful AI-assisted work, unfamiliar writing styles, small websites, satire, and disagreement are not inherently low quality.
 
+Please follow the [community code of conduct](CODE_OF_CONDUCT.md). We want newcomers to be able to ask questions and experienced contributors to disagree constructively.
+
 ## Start here
 
 ```sh
