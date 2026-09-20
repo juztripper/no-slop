@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, SettingsSchema, shouldFilter, isAllowlisted, type Verdict } from '../src/shared/contracts';
+import { DEFAULT_SETTINGS, SettingsSchema, parseStoredSettings, shouldFilter, isAllowlisted, type Verdict } from '../src/shared/contracts';
 import { isSensitivePage, normalizeEndpoint, normalizeDomain, publicContentUrl } from '../src/shared/security';
 
 const verdict: Verdict = { id:'x', category:'ai-slop', confidence:.9, reasons:['Repetitive content'], signals:{lowQuality:.9,synthetic:.9,clickbait:.1}, evidence:{text:true,thumbnail:false,destination:false}, model:'test' };
@@ -25,6 +25,13 @@ describe('filtering policy', () => {
   it('rejects corrupted settings', () => {
     expect(SettingsSchema.safeParse({threshold:1.1}).success).toBe(false);
     expect(SettingsSchema.safeParse({mode:'delete'}).success).toBe(false);
+  });
+  it('uses direct mode for fresh settings and preserves the legacy server route', () => {
+    expect(parseStoredSettings(undefined)).toMatchObject({connectionMode:'direct',inspectDestinations:false,consent:false});
+    expect(parseStoredSettings({})).toMatchObject({connectionMode:'direct',consent:false});
+    expect(parseStoredSettings({consent:true,endpoint:'https://my-detector.example',serviceToken:'existing'})).toMatchObject({connectionMode:'server',consent:true,inspectDestinations:true,serviceToken:'existing'});
+    expect(parseStoredSettings({consent:true,threshold:5})).toMatchObject({connectionMode:'direct',consent:false});
+    expect(parseStoredSettings({connectionMode:'direct',consent:false})).toMatchObject({connectionMode:'direct',inspectDestinations:false});
   });
   it('matches whole domain boundaries, including subdomains', () => {
     expect(isAllowlisted('www.Example.com',['example.com'])).toBe(true);

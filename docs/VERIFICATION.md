@@ -1,8 +1,22 @@
 # Verification record
 
-Latest local checks on 20 September 2026. This file distinguishes implemented behavior, measured checks, and launch work that has not happened.
+This file separates current 0.2.0 checks from historical evidence. Passing local or CI checks does not establish browser-store acceptance or live provider qualification.
 
-## Automated checks
+## 0.2.0 direct-mode qualification
+
+On 20 September 2026, `npm run check` passed: strict TypeScript, **225 tests across 16 files**, the extension production build and the optional service build. `npm audit --omit=dev --audit-level=high` reported zero known vulnerabilities. The packaging command passed its credential/output checks and produced a 21-file Chromium ZIP with a root manifest, installation instructions, privacy notice, release notes and licenses.
+
+New automated coverage uses simulated Chrome storage/runtime and provider responses. It exercises fresh and legacy installations; saved-key authentication checks without inference; key redaction and failed storage restrictions; consent and key changes during in-flight work; direct-mode exclusion of URLs/images; shared server/direct verdict policy; reservations before paid dispatch; restart-persistent quotas and caches; queued cancellation and reservation rollback; concurrent provider cooldowns; and partial results at the daily allowance boundary. UI tests cover save/check/removal, failed operations, cap-only changes preserving consent, and disabled/scrubbed credentials in the web preview.
+
+The actual web preview was reviewed in Chrome at desktop width and in a 390-pixel iframe viewport. Both connection forms render, credentials and provider checks remain disabled in the preview, and keyboard arrow focus plus Space activates the connection choices. This is interface verification, not installed-extension qualification.
+
+The browser automation policy blocked navigation to the extension-management page, so this run did not load/reload an unpacked extension. No real key authentication or paid inference was performed for 0.2.0. Installed Chrome/Edge behavior, actual provider connectivity, worker suspension in an installed browser, and authenticated live-feed coverage remain qualification gaps. The historical 0.1.0 evidence below does not fill those gaps.
+
+## Historical 0.1.0 checks — 20 September 2026
+
+The following results belong to the earlier self-hosted release and its text-only policy work. They are retained as evidence, not repeated as 0.2.0 validation.
+
+### Automated checks
 
 `npm run check` passed: strict TypeScript, **167 tests across 14 files**, the extension production build, and the compiled service build. The suite covers settings persistence, extension message trust, consent revocation, secret redaction, queue/deadline behavior, stale/recycled nodes, privacy paths, full-card boundaries, restored app styles, nested replies, focus safety, reduced motion, SSRF and redirects, schema failures, provider errors, CORS, authentication, quotas, and caching.
 
@@ -12,7 +26,7 @@ Rate-limit regressions simulate sustained requests from four tabs and verify at 
 
 The production build scans every output file for configured credentials and rejects any packaged environment file. `npm audit --audit-level=moderate` reported no known vulnerabilities at verification time. The compiled service was started separately and its health endpoint responded successfully. Docker configuration is supplied, but a Docker runtime was not available for a container smoke test in this environment.
 
-## Actual provider checks
+### Actual provider checks
 
 Current policy `text-quality-v2.0` ignores all images. A 40-case authored text comparison caught 14/14 poor examples and retained 26/26 keep examples at Balanced; the preceding policy missed seven on the same corpus. Both reports, exact questions and raw scores are preserved as `text-baseline.json` and `text-candidate.json`. This is a development comparison, not an independent accuracy benchmark.
 
@@ -33,7 +47,7 @@ The historical main corpus has 15 keep examples and five filter examples; three 
 
 The earlier policy missed a keyword doorway and content with explicit generator residue because combined evidence scores stayed just below the default threshold. The text-quality-v2.0 comparison above uses direct quality scores with a separate evidence-sufficiency gate, retaining the same Balanced threshold of 0.85.
 
-## Real browser checks
+### Real browser checks
 
 - On 20 September, reviewed the blur treatment using the actual renderer in `dev/presentation.html`. Checked dark posts, light search results, horizontal videos, narrow cards, thumbnails, 40-pixel replies and 64 × 28 cards. Measured all seven controls inside their card bounds, changed a card's size without replacing its treatment, and reviewed a 390-pixel viewport. The accessibility tree excludes censored links and retains seven named reveal buttons. Reduced-motion emulation reports no mask animations; Restore all removes every treatment and inert attribute. Reveal event isolation and focus restoration pass unit tests; the current browser automation cannot click into the closed shadow root, so this revision still needs manual reveal activation in the installed extension.
 - Inspected current YouTube search cards (`ytd-video-renderer`) and current Shorts cards (`ytm-shorts-lockup-view-model`), including image URLs and available description snippets.
@@ -49,10 +63,10 @@ The integration workbench uses authored fixtures and actual production modules. 
 
 ## Qualification still required beyond the developer preview
 
-1. Install the unpacked build in Chrome and Edge, grant/revoke consent, connect the user's chosen local or remote detector, and verify background-worker suspension/restart plus page actions end to end.
+1. Install the unpacked build in Chrome and Edge, grant/revoke consent, connect the user's own OpenRouter account and optional local/remote detector, and verify background-worker suspension/restart, durable request limits and page actions end to end.
 2. Test logged-in YouTube home/watch/comments, Instagram, Facebook, TikTok, X, and Reddit feeds for current account-specific layouts, infinite scroll, comments/replies, navigation, and restore. These adapters currently have deterministic fixtures; they are not claimed as universally live-qualified.
 3. Test keyboard Enter/Space activation, a screen reader, reduced motion, browser zoom, mobile-width content pages, narrow/short browser windows, and websites with restrictive CSS/CSP.
 4. Expand detection evaluation using consented, independently labeled real examples. Measure precision/recall per platform and language, with an untouched evaluation set and disagreement review.
-5. If a third party offers a shared detector, separately qualify its load handling, spending cap, persistent volume and operator privacy/security contacts. Browser-store distribution also requires its own review. Neither service hosting nor store publication is included in this self-hosted developer preview.
+5. If a third party offers a shared detector, separately qualify its load handling, spending cap, persistent volume and operator privacy/security contacts. Browser-store distribution also requires its own review. Neither service hosting nor store publication is included in this developer preview.
 
 The code is ready to inspect, run locally, and contribute to. It is a pre-release; the unchecked qualification steps above are not presented as complete.

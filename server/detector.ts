@@ -9,38 +9,8 @@ export interface InspectionOptions { inspectThumbnails: boolean; inspectDestinat
 export interface Provider { decide(record: unknown, signal?: AbortSignal): Promise<Decision>; describeImage(image: Awaited<ReturnType<typeof downloadPublic>>, signal?: AbortSignal): Promise<VisualEvidence> }
 type Detection = { verdict: Verdict; warnings: string[] };
 
-export function verdictFromDecision(item: ContentItem, decision: Decision, evidence: Verdict['evidence']): Verdict {
-  const lowQuality = decision.answers.low_quality.noul;
-  const synthetic = decision.answers.synthetic.noul;
-  const clickbait = decision.answers.clickbait.noul;
-  const sufficient = decision.answers.enough_evidence.noul;
-  let category: Verdict['category'] = 'uncertain'; let confidence = 0;
-  const reasons: string[] = [];
-  // The model directly scores the visible item's quality. Sufficiency is an
-  // abstention gate; authorship selects a category, not a second quality penalty.
-  // These scores are not calibrated statistical probabilities.
-  if (sufficient >= 0.7 && lowQuality >= 0.6) {
-    confidence = lowQuality;
-    if (synthetic >= 0.85) {
-      category = 'ai-slop';
-      reasons.push('Likely low-value content with signs of synthetic generation.');
-    } else if (synthetic <= 0.25) {
-      category = 'human-slop';
-      reasons.push('Likely low-value content or spam. Its authorship is unknown.');
-    } else {
-      category = 'slop';
-      reasons.push('Likely low-value content; its authorship is unclear.');
-    }
-  } else if (lowQuality <= 0.25 && sufficient >= 0.7) {
-    category = 'quality'; confidence = Math.max(0, sufficient - lowQuality);
-    reasons.push('No strong quality problem found in the available evidence.');
-  } else reasons.push(sufficient < 0.7 ? 'Not enough context to judge fairly.' : 'The evidence is mixed. Content is kept.');
-  if (clickbait >= 0.85) reasons.push('The model found signs of a misleading hook or engagement bait.');
-  if (synthetic >= 0.85 && lowQuality < 0.6) reasons.push('Possible AI use alone is not a reason to filter.');
-  if (evidence.thumbnail) reasons.push('Thumbnail inspected with a vision model.');
-  if (evidence.destination) reasons.push('Public destination text inspected.');
-  return { id: item.id, category, confidence: Math.round(confidence * 1_000_000) / 1_000_000, reasons, signals: { lowQuality, synthetic, clickbait }, evidence, model: decision.model };
-}
+export { verdictFromDecision } from '../src/shared/decision.js';
+import { verdictFromDecision } from '../src/shared/decision.js';
 
 export class Detector {
   private readonly cache: ExpiringCache<Detection>;

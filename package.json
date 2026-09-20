@@ -1,6 +1,6 @@
 {
   "name": "no-slop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Open-source Chromium extension for AI slop, clickbait and content farms. Reversible filtering with your own OpenRouter key.",
@@ -18,7 +18,7 @@
     "manifest-v3",
     "content-filter",
     "ai-slop",
-    "self-hosted",
+    "bring-your-own-key",
     "openrouter",
     "typescript",
     "react",

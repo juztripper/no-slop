@@ -227,6 +227,17 @@ describe('page lifecycle and bounded work', () => {
     expect(document.querySelector('[data-no-slop-root]')).toBeNull();
   });
 
+  it('keeps completed filtering and explains when the remaining daily allowance is exhausted', async () => {
+    const runtime = bridge(settings(), async items => ({
+      verdicts:[verdict(items[0].id)],
+      errors:[{id:items[1].id,message:'Daily OpenRouter call allowance reached. Increase it in settings or try tomorrow.'}],
+    }));
+    const controller = await start(runtime, card('Unsupported guaranteed riches with no work',0) + card('Another visible unassessed result',1));
+    expect(controller.pageStats).toMatchObject({scanned:1,filtered:1,status:'error',error:expect.stringContaining('Daily OpenRouter call allowance reached')});
+    expect(document.querySelector('[data-card="0"] [data-no-slop-root]')).not.toBeNull();
+    expect(document.querySelector('[data-card="1"] [data-no-slop-root]')).toBeNull();
+  });
+
   it('reports incomplete evidence even when the service returns an uncertain verdict for that item', async () => {
     const runtime = bridge(settings(), async items => ({ verdicts: items.map(item => verdict(item.id, { category: 'uncertain' })), errors: items.map(item => ({ id: item.id, message: 'The destination could not be inspected.' })) }));
     const controller = await start(runtime);

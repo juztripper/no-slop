@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/license-AGPL--3.0-202020?style=flat-square" /></a>
-  <a href="https://github.com/juztripper/no-slop/releases/tag/v0.1.0"><img alt="0.1.0 developer preview" src="https://img.shields.io/badge/release-0.1.0_preview-bd3049?style=flat-square" /></a>
+  <a href="https://github.com/juztripper/no-slop/releases/tag/v0.2.0"><img alt="0.2.0 developer preview" src="https://img.shields.io/badge/release-0.2.0_preview-bd3049?style=flat-square" /></a>
   <a href="https://github.com/juztripper/no-slop/actions/workflows/ci.yml"><img alt="Quality checks" src="https://github.com/juztripper/no-slop/actions/workflows/ci.yml/badge.svg" /></a>
   <img alt="Chromium Manifest V3" src="https://img.shields.io/badge/Chromium-Manifest_V3-646464?style=flat-square" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" />
@@ -18,12 +18,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/juztripper/no-slop/releases/tag/v0.1.0">Download preview</a> · <a href="#try-it-locally">Get started</a> · <a href="docs/DEPLOYMENT.md">Bring your own key</a> · <a href="CONTRIBUTING.md">Contribute</a>
+  <a href="https://github.com/juztripper/no-slop/releases/tag/v0.2.0">Download preview</a> · <a href="#get-started">Get started</a> · <a href="docs/DEPLOYMENT.md">Bring your own key</a> · <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
 **We are looking for contributors.** Help make site adapters reliable, catch false positives, add multilingual examples, or improve accessibility. The interface preview and deterministic tests need no API key. [Choose a first contribution →](CONTRIBUTING.md)
 
-**Developer preview · 0.1.0.** Bring your own OpenRouter key and run the detector on your computer or a server you control. You pay your own provider usage; the project does not supply a hosted detector or shared key. Install the extension unpacked in Chrome or Edge. See the [release notes](https://github.com/juztripper/no-slop/releases/tag/v0.1.0) and [verification record](docs/VERIFICATION.md) for what has been tested.
+**Developer preview · 0.2.0.** Use your own OpenRouter key directly in the extension. No separate server, Node.js, or running terminal is needed to use the extension ZIP. Provider usage is billed to your account; the project supplies no shared key or credits. A self-hosted detector remains optional. See [0.2.0 notes](docs/releases/0.2.0.md) and the [verification record](docs/VERIFICATION.md).
 
 ## Your feed, with a higher standard
 
@@ -32,15 +32,28 @@ The internet still contains thoughtful writing, patient tutorials, useful replie
 - **Two independent filters.** Poorly generated AI content and classic low-quality content, such as spam and content farms. AI use by itself is not a reason to filter.
 - **Censor or hide.** Censor softly blurs the original content, with a small stamp and reveal control that adapt to the result's size and light or dark surface. Hide closes the space it occupied. Restore the whole page from the popup.
 - **Context stays intact.** Paragraphs and discussions with dependent replies get a quality note instead of having their meaning removed.
-- **Your thresholds, your exceptions.** Choose filter strength, enable individual sites, pause a domain, and control destination analysis.
+- **Your thresholds, your exceptions.** Choose filter strength, enable individual sites, and pause a domain. Optional self-hosted mode can also inspect public search destinations.
 - **A small amount of motion.** A stamp settles in; a hidden result gently leaves. Disable animation at any time. System reduced-motion settings take precedence.
 - **Text-only detection.** Jev makes typed decisions through OpenRouter using titles, captions, snippets and context. Images are not fetched or analyzed.
 
 <p align="center"><img src="docs/images/settings.jpg" width="880" alt="NO SLOP settings with AI and human filters, censor or hide choices, filter strength, and an illustrative feed preview" /></p>
 
-## Try it locally
+## Get started
 
-You need **Node.js 24+**, npm, and Chrome or Edge. Actual detection also needs **your own OpenRouter key and paid provider credits**. Building, running the interface preview, and deterministic tests need no key.
+For the [**0.2.0 extension ZIP**](https://github.com/juztripper/no-slop/releases/download/v0.2.0/no-slop-0.2.0-chromium.zip), you need Chrome or Edge and your own [OpenRouter key](https://openrouter.ai/settings/keys) with provider credits. No separate server is required.
+
+1. Extract the ZIP into a permanent folder. Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, choose **Load unpacked**, and select that folder.
+2. Open NO SLOP's settings → **Privacy & connection**. Choose **OpenRouter** and paste your own key. Set a dollar spending limit on that key in OpenRouter.
+3. Choose **Save connection**, then **Check connection**. This checks key authentication without making a paid model request. Set your daily request limit; the default is **100 requests**, resetting at midnight UTC.
+4. Review the data-sharing notice, consent, and enable analysis. Refresh feed tabs that were already open.
+
+The daily request limit is a local call cap, **not a dollar spending limit**. The key stays in device-local extension storage, restricted to trusted extension pages and the background worker. It is not synced or exposed to page scripts, but it is not an encrypted vault. [Privacy details](PRIVACY.md) · [Setup and troubleshooting](docs/DEPLOYMENT.md).
+
+**Upgrading from 0.1.0?** Existing installations keep their self-hosted detector and settings. Choose **OpenRouter**, save your own key, and consent again to switch. Keep the extension in the same folder when updating, reload it from the extensions page, then refresh feed tabs. [Historical 0.1.0 instructions](docs/releases/0.1.0.md) remain available.
+
+### Contribute from source
+
+Source development needs **Node.js 24+** and npm. The interface preview, build, and deterministic tests need no key.
 
 ```sh
 git clone https://github.com/juztripper/no-slop.git
@@ -49,33 +62,22 @@ npm ci
 npm run build
 ```
 
-Copy `.env.example` to `.env` if you do not have one already, and set `OPENROUTER_API_KEY` to your own key. Keep the file local; never put this key in extension settings. Set a spending limit on the provider key and adjust `DAILY_CALL_BUDGET` for your usage. Then start your detector and leave this terminal running:
-
-```sh
-npm run server:dev
-```
-
-Open `chrome://extensions` (or `edge://extensions`), enable **Developer mode**, choose **Load unpacked**, and select the generated **`dist/`** directory. In the first-run settings, test the local detector connection, review the data-sharing choices, and enable content analysis. Refresh pages that were open before installation.
-
-**Using a release ZIP?** [Download the extension](https://github.com/juztripper/no-slop/releases/download/v0.1.0/no-slop-0.1.0-chromium.zip), extract it into a permanent folder and load that folder instead of `dist/`. The ZIP contains the extension, not a detector or an API key. You still need the source checkout and local detector setup above. [Checksums](https://github.com/juztripper/no-slop/releases/download/v0.1.0/SHA256SUMS) · [Step-by-step setup and troubleshooting](docs/DEPLOYMENT.md).
-
-After rebuilding, reload NO SLOP on the extensions page, then refresh your open feed tabs to load the new content script. An extension reload invalidates scripts already running in those tabs; they stop scanning and restore content when the lost connection is detected. Chrome keeps previously recorded errors until you clear them.
-
-To work on the interface:
+Load the generated `dist/` directory as an unpacked extension, then follow the setup above. For interface work:
 
 ```sh
 npm run dev
 # http://127.0.0.1:5173 — settings and a clearly labeled interactive demo
+npm run check
 ```
 
-The demo uses pre-labeled example content. Real website filtering happens in the installed extension. [Detailed deployment instructions](docs/DEPLOYMENT.md) cover Docker, HTTPS, the service token, extension origins, spending controls, and release gates.
+The demo uses pre-labeled examples and makes no provider calls. [Optional self-hosted setup](docs/DEPLOYMENT.md#optional-self-hosted-detector) covers local Node.js, Docker, HTTPS, service tokens and destination inspection.
 
 ## Site support
 
 | Surface | What is inspected | What is filtered |
 | --- | --- | --- |
 | YouTube | Titles, available description snippets and comment text | Recognized video/Shorts cards, community posts and comments |
-| Google Search | Search preview plus public destination HTML when enabled and accessible | Complete recognized organic result cards |
+| Google Search | Search previews; optional public destination HTML in self-hosted mode | Complete recognized organic result cards |
 | Instagram / Facebook / X | Visible captions, posts, comments and available context | Recognized whole post or comment containers |
 | TikTok | Captions and comments | Recognized video and comment cards |
 | Reddit / forums | Posts, replies and public discussion context | Whole independent items; annotations where replies depend on them |
@@ -87,16 +89,16 @@ Adapters cover specific markup, not a promise that every layout or account varia
 
 ```mermaid
 flowchart LR
-  A["Visible content<br/>Adapters and consent checks"] --> B["Your detector<br/>Optional public-page text"]
+  A["Visible text<br/>Adapters and consent checks"] --> B["Extension background<br/>Your key and request limit"]
   B --> C["Jev through OpenRouter<br/>Typed quality decisions"]
   C --> D["Your settings<br/>Keep · annotate · censor · hide"]
 ```
 
-The content script identifies bounded items and watches visible, newly loaded content. The background validates requests, checks consent and exceptions, and talks to the configured service. The server enriches public evidence and asks independent Jev questions about quality, synthetic artifacts, deceptive hooks, and sufficient context. Deterministic policy then applies the user's settings.
+The content script identifies bounded items and watches visible, newly loaded content. The background validates requests, checks consent and exceptions, and calls OpenRouter using your key. Shared policy validates Jev's typed answers and applies your filtering choices. Direct mode uses visible text, titles, captions, snippets and available context. It does not open links or fetch destination pages or images.
 
-Unknown authorship is not invented. When quality is clearly poor but origin is unclear, filtering applies only when both categories are enabled. Uncertain quality stays visible. If a destination cannot be fetched, only its available preview is judged; the failure itself is never a quality signal. Reasons describe the rubric signals; they are not fabricated model reasoning.
+Unknown authorship is not invented. When quality is clearly poor but origin is unclear, filtering applies only when both categories are enabled. Uncertain quality stays visible. Reasons describe rubric signals; they are not fabricated model reasoning.
 
-The server validates model output, limits input sizes and concurrency, checks and pins public DNS for destination fetches, rechecks redirects, caches decisions temporarily, and persists a daily paid-call allowance. The browser does not execute model output or remote code. [Architecture](docs/ARCHITECTURE.md) · [Detector details and evaluation](docs/DETECTOR.md).
+The background reserves paid calls against a persistent daily request limit and caches bounded hashed-key verdicts without storing raw text. Model output is data, never executable code. An optional self-hosted detector can add public destination text with DNS and redirect safeguards; a failed fetch is never a quality signal. [Architecture](docs/ARCHITECTURE.md) · [Detector and evaluation](docs/DETECTOR.md).
 
 ## Quality is measured, not declared
 
@@ -120,13 +122,13 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), then open a focused issue or pull reque
 | Website adapters and context preservation | `src/content/` |
 | Filtering policy, schemas and privacy guards | `src/shared/` |
 | Popup, settings and interactive demo | `src/ui/` |
-| Secure browser transport | `src/background/` |
-| Jev and destination inspection | `server/` |
+| Direct OpenRouter processing and secure browser transport | `src/background/` |
+| Optional self-hosted detector and destination inspection | `server/` |
 | Regressions and live evaluation | `tests/`, `scripts/evaluate-text.ts` |
 
 ## Privacy and license
 
-Analysis is opt-in and uses your chosen detector and provider account. Running the detector locally keeps the key on your computer; selected text still goes to OpenRouter and Jev for inference. Read the [privacy document](PRIVACY.md) before enabling it. For vulnerabilities, read [SECURITY.md](SECURITY.md).
+Analysis is opt-in and uses your own provider account, either directly or through your chosen self-hosted detector. Selected text goes to OpenRouter and Jev for inference; this is not offline detection. Read the [privacy document](PRIVACY.md) before enabling it. For vulnerabilities, read [SECURITY.md](SECURITY.md).
 
 NO SLOP is licensed under [AGPL-3.0-only](LICENSE). Modified network-hosted versions must meet the license's source-sharing requirements. Jev is an external service with its own terms; it is not bundled or relicensed by this project.
 

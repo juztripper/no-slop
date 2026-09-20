@@ -37,7 +37,10 @@ export const SettingsSchema = z.object({
   enabled: z.boolean().default(true), aiSlop: z.boolean().default(true), humanSlop: z.boolean().default(true),
   mode: z.enum(['censor', 'hide']).default('censor'), threshold: z.number().min(0.6).max(0.99).default(0.85),
   animations: z.boolean().default(true), annotateParagraphs: z.boolean().default(true),
-  inspectThumbnails: TextOnlyThumbnailSetting, inspectDestinations: z.boolean().default(true),
+  inspectThumbnails: TextOnlyThumbnailSetting, inspectDestinations: z.boolean().default(false),
+  connectionMode: z.enum(['direct', 'server']).default('direct'),
+  openRouterKey: z.string().trim().max(500).default(''),
+  dailyCallLimit: z.number().int().min(1).max(10000).default(100),
   endpoint: z.string().max(2048).default('http://localhost:8787'),
   serviceToken: z.string().max(500).default(''), consent: z.boolean().default(false),
   allowlist: z.array(z.string().max(253)).max(500).default([]),
@@ -45,6 +48,16 @@ export const SettingsSchema = z.object({
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
+
+/** Keep an existing server installation on its chosen data route during upgrade. */
+export function parseStoredSettings(value: unknown): Settings {
+  const legacy = value !== null && typeof value === 'object' && !Array.isArray(value) &&
+    Object.keys(value).length > 0 && !('connectionMode' in value);
+  const parsed = SettingsSchema.safeParse(legacy
+    ? { ...value, connectionMode: 'server', inspectDestinations: 'inspectDestinations' in value ? value.inspectDestinations : true }
+    : value ?? {});
+  return parsed.success ? parsed.data : structuredClone(DEFAULT_SETTINGS);
+}
 
 export interface PageStats { scanned: number; filtered: number; uncertain: number; status: 'idle'|'scanning'|'waiting'|'ready'|'error'|'paused'; error?: string; }
 export const EMPTY_STATS: PageStats = { scanned:0, filtered:0, uncertain:0, status:'idle' };

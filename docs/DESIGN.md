@@ -30,13 +30,13 @@ The accepted layout stays intact: four persistent settings destinations, one rea
 - Censored posts retain their shape and visual content beneath a soft blur. A small stamp and reveal control match the page's light or dark surface; container queries shorten the explanation or reduce the control to an accessible eye button on tiny cards. Keep original content inert until revealed, preserve page-owned DOM nodes, and restore their styles faithfully.
 - The settings preview uses the actual content presentation renderer with an explicitly illustrative verdict. Check `dev/presentation.html` locally for large posts, search results, short replies and live resizing without making model calls.
 - Disabled motion removes the stamp and exit animation. Device-level reduced motion overrides the extension setting.
-- Preferences save immediately. Service credentials use a separate save action so partially typed URLs are not used for analysis.
-- Changing the detector address revokes analysis consent. The consent describes text snippets, provider processing and optional search destination fetching, and states that images are not analyzed.
+- Preferences save immediately. Connection credentials use a separate **Save connection** action so partially typed keys or URLs are not used for analysis. **Check connection** authenticates saved credentials without a paid model request; the interface preview never stores real credentials.
+- Changing processing mode, a provider key or the detector address revokes analysis consent. **Privacy & connection** offers **OpenRouter** as the new-install default and **Self-hosted detector** as an optional advanced mode. Existing installations retain self-hosted mode. Consent describes text and context sent for provider processing; destination inspection appears only in self-hosted mode. Images are not analyzed.
 - A failed save shows an error and does not report success. Rapid preference changes are serialized.
 - Disabled or unavailable actions remain understandable. The preview does not fake live scan counts or connection status.
 
 ## Contribution checks
 
-Use sentence case for labels, maintain visible keyboard focus, label every input, and do not convey status through color alone. Keep the small-popup and narrow settings layouts usable. Check motion with the operating system's reduced-motion preference. Avoid adding external assets to extension pages or exposing provider API keys in browser storage.
+Use sentence case for labels, maintain visible keyboard focus, label every input, and do not convey status through color alone. Keep the small-popup and narrow settings layouts usable. Check motion with the operating system's reduced-motion preference. Avoid adding external assets to extension pages. Keep provider keys in device-local storage restricted to trusted extension contexts, never Chrome Sync or content-script settings. Describe this as local storage, not an encrypted vault. Distinguish the daily request allowance from the OpenRouter key dollar limit.
 
 Brand source files are in `public/brand/`. Use the SVG mark for documentation and generate browser icon sizes from that source. The README banner contains no claim of a published service or repository owner.
