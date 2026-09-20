@@ -87,15 +87,9 @@ Adapters cover specific markup, not a promise that every layout or account varia
 
 ```mermaid
 flowchart LR
-  A[Visible content item] --> B[Site adapter]
-  B --> C[Extension background]
-  C --> D[Your detector service]
-  D --> E[Public destination text]
-  E --> G[Jev typed decisions]
-  D --> G
-  G --> H[Quality and evidence checks]
-  H --> I[Your filter settings]
-  I --> J[Keep / annotate / censor / hide]
+  A["Visible content<br/>Adapters and consent checks"] --> B["Your detector<br/>Optional public-page text"]
+  B --> C["Jev through OpenRouter<br/>Typed quality decisions"]
+  C --> D["Your settings<br/>Keep · annotate · censor · hide"]
 ```
 
 The content script identifies bounded items and watches visible, newly loaded content. The background validates requests, checks consent and exceptions, and talks to the configured service. The server enriches public evidence and asks independent Jev questions about quality, synthetic artifacts, deceptive hooks, and sufficient context. Deterministic policy then applies the user's settings.
