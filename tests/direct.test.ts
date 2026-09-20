@@ -47,7 +47,7 @@ describe('direct OpenRouter boundary', () => {
 
   it.each([[401, 'rejected your API key'], [402, 'credit or key spending limit'], [429, 'rate limiting']] as const)('reports safe actionable errors for HTTP %s', async (status, message) => {
     const storage = new Storage(); const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(apiKey + ' private provider body', { status, headers: { 'Retry-After': '45' } }));
-    const pending = new DirectDetector(storage, fetcher).analyze(request(item), config, signal());
+    const pending = new DirectDetector(storage, fetcher, () => Date.parse('2026-09-20T12:00:00Z')).analyze(request(item), config, signal());
     await expect(pending).rejects.toThrow(message);
     await expect(pending).rejects.toMatchObject({ statusCode: status, ...(status === 429 ? { retryAfterMs: 46_000 } : {}) });
     await pending.catch(error => { expect(error.message).not.toContain(apiKey); expect(error.message).not.toContain('private provider body'); });
