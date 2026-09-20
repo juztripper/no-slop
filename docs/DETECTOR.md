@@ -2,12 +2,14 @@
 
 NO SLOP makes a conservative judgment about content quality. It does not prove whether a person or a model made something, establish factual truth, or judge the effort behind a work. Helpful AI-assisted material stays. Amateur writing, a political viewpoint, a catchy title, and a topic about AI are not sufficient reasons to filter.
 
+The 0.2.0 default runs the request orchestration in the extension background worker, using the user's own OpenRouter key. The optional self-hosted detector adds guarded public destination inspection. Both use `src/shared/decision.ts` for Jev questions, response validation and deterministic verdict policy.
+
 ## How an item is assessed
 
 1. The extension extracts one complete content unit: a result, post, video card, reply, or paragraph, with nearby context where available. It sends only bounded fields after the user enables detection.
 2. Images are ignored. The extension does not extract or send thumbnail URLs. Saved image preferences and legacy API requests normalize to disabled; the detector never downloads an image or calls a vision model.
-3. If destination inspection is enabled, search results are fetched by the service before the user opens them. The fetcher follows at most three redirects and extracts public HTML text with Mozilla Readability, capped at 12,000 DOM elements. A semantic-text fallback preserves short spam/doorway pages that have no readable article. Extracted text is capped at 10,000 characters. Scripts never execute. Social-media permalinks are not fetched as search destinations.
-4. Jev receives the text, context, and available destination text. Four `noul` questions assess substantial poor quality, specific synthetic clues, deceptive hooks, and evidence sufficiency. The rubric judges the visible item, including direct manipulative claims, circular filler, keyword doorways, spam and unfinished generator residue. Quotation, criticism, satire, useful detail and honest limits are explicit counterexamples.
+3. Direct mode uses the extracted text and context only; it does not fetch URLs. In optional self-hosted mode, if destination inspection is enabled, search results are fetched by the service before the user opens them. The fetcher follows at most three redirects and extracts public HTML text with Mozilla Readability, capped at 12,000 DOM elements. A semantic-text fallback preserves short spam/doorway pages that have no readable article. Extracted text is capped at 10,000 characters. Scripts never execute. Social-media permalinks are not fetched as search destinations.
+4. Jev receives the text and context, plus any available destination text in self-hosted mode. Four `noul` questions assess substantial poor quality, specific synthetic clues, deceptive hooks, and evidence sufficiency. The rubric judges the visible item, including direct manipulative claims, circular filler, keyword doorways, spam and unfinished generator residue. Quotation, criticism, satire, useful detail and honest limits are explicit counterexamples.
 5. A deterministic policy combines these answers into a verdict. The user's category toggles, threshold, and presentation settings determine what the extension changes.
 
 Jev uses OpenRouter's dedicated [`POST /api/alpha/decisions`](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-questions-and-answers-request), with the requested alias `~typesafe/jev-latest`. A live request on 2026-09-19 resolved to `typesafe/jev-1.13-20260917`. Jev currently accepts [text only](https://docs.typesafe.ai/concepts/system-one). Its [`noul` answer](https://docs.typesafe.ai/primitives/noul) is a yes-probability, not a free-form explanation. The reasons shown to users are explicit policy descriptions; they are not fabricated model reasoning.
@@ -28,6 +30,8 @@ The default threshold is 0.85; Gentle uses 0.95 and Strict uses 0.70. Scores are
 
 ## Evaluation evidence
 
+The following measurements predate the 0.2.0 browser-direct transport. They describe the shared policy and server-based evaluation scripts, not an end-to-end browser-direct qualification.
+
 Run `npm run eval:text` with a configured OpenRouter key. It makes 40 paid Jev requests and writes [`evaluations/text-candidate.json`](evaluations/text-candidate.json), including the corpus hash, exact questions, individual answers, preset outcomes, timing and reported cost. The evaluation uses a separate bounded ledger so it does not race a running local service's ledger. No API key is written.
 
 The authored corpus contains 14 filter examples and 26 keep examples, including contrast pairs in English, Portuguese and Spanish. Before the change, the same corpus produced 33/40 expected outcomes: seven missed low-quality items and no false positives, preserved in [`evaluations/text-baseline.json`](evaluations/text-baseline.json). The first text-quality-v2.0 run produced 40/40 expected outcomes at Balanced: all 14 poor items detected and all 26 keep items retained. These are development cases used to evaluate the change, not an independent test set. Reports for the earlier policy in `latest.json`, `baseline.json` and `holdout.json` are historical, including their old image checks.
@@ -38,6 +42,16 @@ This is not a representative accuracy benchmark. Before a broad public release, 
 
 ## Resource and privacy boundaries
 
+### Direct OpenRouter mode
+
+- `src/background/direct.ts` sends bounded text records to the fixed OpenRouter Decisions endpoint and validates the response with the shared schema. Credentials are not sent through redirects. Model output is never executed.
+- Keys remain in device-local extension storage restricted to trusted contexts, never Chrome Sync or content scripts. This is not an encrypted vault.
+- A durable local UTC-day counter reserves paid calls before dispatch, including failures. Its default is 100 requests per day, configurable from 1 to 10,000. It survives worker restarts; clearing extension data resets it. This is a call cap, not a monetary cap: use a separate OpenRouter key spending limit.
+- The bounded cache stores content hashes and verdicts without persisted raw text. Direct mode does not fetch destination HTML, images or thumbnails. Failed requests leave content visible.
+- Checking the saved key authenticates it without a paid model decision; it does not qualify inference availability or content quality.
+
+### Optional self-hosted mode
+
 - No content, authorization headers, prompts, or provider responses are logged. The verdict cache is bounded in memory, keyed by a digest of content, options, policy, and model names. Its default TTL is 30 minutes. In-flight duplicate items share work.
 - Public fetching rejects IP literals, private/reserved addresses, mixed public/private DNS, credentials, nonstandard ports, and local hostnames. Each redirect is checked again. The validated address is pinned to the socket while preserving TLS hostname verification. Requests use GET and send no browser cookies or user credentials.
 - Destination HTML is capped at 750 KB; compressed responses are rejected. The parser does not run scripts or fetch subresources. Images are not requested.
@@ -45,12 +59,12 @@ This is not a representative accuracy benchmark. Before a broad public release, 
 - A persisted daily counter reserves each paid provider request before sending it. The default limit is 10,000 calls, including failed calls. It is a call cap, not a monetary cap. Set an additional OpenRouter key/workspace spending limit. Run one service process per ledger; multiple replicas require a shared atomic quota and rate-limit store.
 - The ledger contains only a UTC date and call count. Put `BUDGET_FILE` on persistent storage for hosting. An unreadable or corrupt ledger fails closed. Deleting the ledger or using ephemeral storage resets that protection.
 - CORS permits unpacked Chrome extension origins only on the default localhost binding. Hosted deployments must list exact origins in `ALLOWED_ORIGINS`; a configurable bearer service token is checked independently. CORS is not authentication and public extension tokens are extractable. Use a gateway with abuse controls before opening a subsidized public endpoint.
-- The API key stays on the server. `OPENROUTER_API_KEY` is canonical. For this project's existing local environment, `OPENAI_API_KEY` is accepted only when its value begins with OpenRouter's `sk-or-` prefix.
+- In this mode, the API key stays on the server. `OPENROUTER_API_KEY` is canonical. For this project's existing local environment, `OPENAI_API_KEY` is accepted only when its value begins with OpenRouter's `sk-or-` prefix.
 
 Public fetching contacts the destination from the server and can appear in its access logs. Provider retention and routing are governed by OpenRouter and the selected providers. Configure the provider account's privacy controls for the hosted service and disclose the actual operator, processors, and retention policy before publication.
 
 ## Known limits
 
-The service sees extracted previews and selected public page text, not the full experience of a website. JavaScript-only pages, logins, bot challenges, video/audio content, image-only claims and paywalls may provide too little evidence. Destination inspection cannot certify performance, safety, truthfulness, or whether a site works for the user. Prompt boundaries and typed schemas reduce injection opportunities; model judgment remains fallible.
+Direct mode sees extracted visible text and context. Optional self-hosted mode can add selected public page text; neither sees the full experience of a website. JavaScript-only pages, logins, bot challenges, video/audio content, image-only claims and paywalls may provide too little evidence. Destination inspection cannot certify performance, safety, truthfulness, or whether a site works for the user. Prompt boundaries and typed schemas reduce injection opportunities; model judgment remains fallible.
 
 Keep the extension's reveal, restore, allowlist, and undo controls available. False positives are more costly than leaving a doubtful item visible.

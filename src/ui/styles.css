@@ -282,6 +282,10 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
 .privacy-callout p { margin-top: 6px; max-width: 620px; font-size: 13px; line-height: 1.6; }
 .connection-section { max-width: 620px; }
 .connection-section h2 { margin-bottom: 20px; }
+.connection-modes { width: 100%; }
+.connection-modes small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.daily-limit-input { max-width: 180px; }
+.connection-actions { flex-wrap: wrap; }
 .field-label { display: block; margin: 20px 0 8px; font-size: 13px; font-weight: 500; }
 .field-label > span { font-size: 12px; margin-left: 6px; color: var(--muted); font-weight: 400; }
 .field-hint { font-size: 12px; line-height: 1.6; color: var(--muted); margin-top: 8px; }

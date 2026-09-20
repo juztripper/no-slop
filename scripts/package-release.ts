@@ -43,23 +43,28 @@ async function inspect(directory: string, prefix = ''): Promise<void> {
 try {
   await cp(join(root, 'dist'), staging, { recursive: true });
   await cp(join(root, 'PRIVACY.md'), join(staging, 'PRIVACY.md'));
+  await writeFile(join(staging, 'RELEASE_NOTES.md'), releaseNotes);
   await writeFile(join(staging, 'INSTALL.md'), `# NO SLOP ${pkg.version} — developer preview
 
 1. Extract this ZIP into a permanent folder.
 2. Open chrome://extensions or edge://extensions, enable Developer mode, choose Load unpacked, and select this folder. manifest.json must be at its root.
-3. Download or clone the matching project source release. Install Node.js 24+, then run npm ci in the source directory.
-4. Copy .env.example to .env if it does not exist. Set your own OPENROUTER_API_KEY and a provider key spending limit. Never put this key in extension settings.
-5. Run npm run server:dev and keep that terminal running.
-6. In NO SLOP settings → Privacy & service, test http://localhost:8787, review the data flow, enable content analysis, and refresh existing tabs.
+3. Open NO SLOP settings → Privacy & connection and choose OpenRouter. Create your own key at https://openrouter.ai/settings/keys and set a dollar spending limit there.
+4. Paste the key into OpenRouter API key, choose Save connection, then Check connection. This checks authentication without a paid model request.
+5. Choose a Daily request allowance (default 100, from 1 to 10,000; resets at midnight UTC). It is a request-count cap, not a dollar limit. Failed model requests can count.
+6. Review the data-sharing notice, enable Allow content analysis, then enable filtering. Refresh tabs that were already open.
 
-The ZIP contains the browser extension only. You run the detector and pay for provider usage through your own OpenRouter account. The project supplies no key, credits or hosted detector. The optional service token is a separate password for your detector, not an OpenRouter key.
+No Node.js, terminal or separate server is needed for this default setup. You pay OpenRouter for your own model usage. The project supplies no key or credits. Direct processing uses visible text, titles, captions, snippets and context; it does not fetch destination pages or images.
 
-Read PRIVACY.md before enabling analysis. Local hosting keeps your key on your computer; selected text still goes to OpenRouter and Jev. The source contains docs/DEPLOYMENT.md for Docker/remote setup and troubleshooting, CONTRIBUTING.md, and the full verification record.
+Read PRIVACY.md before enabling analysis. Your key is stored locally on this device in trusted extension storage, never Chrome Sync or content scripts. This is not an encrypted vault. Removing extension data resets its local request allowance; the OpenRouter key spending limit is the independent dollar protection.
 
-This is a pre-release installed unpacked, not a browser-store package. After replacing its files, reload the extension and refresh feed tabs. Known site layouts are supported; uncertain content and detector failures stay visible. Images and audio/video are not analyzed.
+Upgrading from 0.1.0? Existing installations keep self-hosted mode. Replace the files in the same folder, reload the extension and refresh feed tabs. To remove the server requirement, choose OpenRouter, save your own key, check it and consent again. Keep the old detector running until you switch.
+
+Self-hosted detector remains an advanced option for public destination inspection and your own infrastructure. Its provider key stays in the server environment; its service token is a separate password. The source contains docs/DEPLOYMENT.md for that setup, CONTRIBUTING.md, and the verification record. Node.js 24+ is needed only for source development or the optional Node.js server.
+
+This is an unpacked pre-release, not a browser-store package. Known layouts are supported; uncertain content and failed requests stay visible. Images and audio/video are not analyzed. See RELEASE_NOTES.md for changes and known limits.
 `);
   await inspect(staging);
-  for (const required of ['manifest.json', 'background.js', 'content.js', 'popup.html', 'options.html', 'LICENSE', 'INSTALL.md', 'PRIVACY.md']) {
+  for (const required of ['manifest.json', 'background.js', 'content.js', 'popup.html', 'options.html', 'LICENSE', 'INSTALL.md', 'PRIVACY.md', 'RELEASE_NOTES.md']) {
     if (!paths.includes(required)) throw new Error(`Missing required release file: ${required}`);
   }
   await mkdir(output, { recursive: true });

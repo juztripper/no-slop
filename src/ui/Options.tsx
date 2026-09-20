@@ -34,7 +34,7 @@ export function Options() {
   const nav: [Section, ReactNode, string][] = [
     ["filters", <SlidersHorizontal size={18} />, "Your filter"],
     ["sites", <Globe2 size={18} />, "Websites"],
-    ["privacy", <LockKeyhole size={18} />, "Privacy & service"],
+    ["privacy", <LockKeyhole size={18} />, "Privacy & connection"],
     ["about", <CircleHelp size={18} />, "About NO SLOP"],
   ];
   const { settings, update } = state;
@@ -136,7 +136,9 @@ export function Options() {
               </span>
               <span>
                 <strong>One thing before we start</strong>
-                <span>Connect your detector and choose what you share.</span>
+                <span>{settings.connectionMode === "direct"
+                  ? "Add your OpenRouter key and choose what you share."
+                  : "Review your detector connection and what you share."}</span>
               </span>
               <ChevronRight size={17} />
             </button>
@@ -155,7 +157,7 @@ export function Options() {
         <footer className="page-footer">
           <span>Made for people who care what they consume.</span>
           <span>
-            NO SLOP <span className="footer-version">/ 0.1.0</span>
+            NO SLOP <span className="footer-version">/ 0.2.0</span>
           </span>
         </footer>
       </div>

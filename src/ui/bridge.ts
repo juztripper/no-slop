@@ -28,8 +28,19 @@ export async function request<T>(message: RuntimeMessage): Promise<T> {
     case "GET_SETTINGS": {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return SettingsSchema.parse(raw ? JSON.parse(raw) : {}) as T;
+        const settings = SettingsSchema.parse({
+          ...(raw ? JSON.parse(raw) : {}),
+          openRouterKey: "",
+          serviceToken: "",
+          consent: false,
+        });
+        // A web preview must never retain a pasted or legacy credential.
+        if (raw) localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        return settings as T;
       } catch {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+        } catch { /* The preview still works if storage is unavailable. */ }
         return structuredClone(DEFAULT_SETTINGS) as T;
       }
     }
@@ -38,6 +49,9 @@ export async function request<T>(message: RuntimeMessage): Promise<T> {
       const settings = SettingsSchema.parse({
         ...previous,
         ...message.settings,
+        openRouterKey: "",
+        serviceToken: "",
+        consent: false,
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       return settings as T;
@@ -50,7 +64,7 @@ export async function request<T>(message: RuntimeMessage): Promise<T> {
       } as T;
     case "HEALTH_CHECK":
       throw new Error(
-        "Install the extension to test the detector connection. This preview never contacts a detector.",
+        "Install the extension to check the connection. This preview never contacts a provider or detector.",
       );
     case "RESTORE_PAGE":
     case "RESCAN_PAGE":

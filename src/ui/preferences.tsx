@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Button, Callout, IconButton, TextField } from "@radix-ui/themes";
+import { Button, Callout, IconButton, RadioCards, TextField } from "@radix-ui/themes";
 import { Globe2, Heart, LockKeyhole, ShieldCheck, X } from "lucide-react";
 import type { Settings, Platform } from "../shared/contracts";
-import { request } from "./bridge";
+import { isExtension, request } from "./bridge";
 import { Toggle, ModeControl, Sensitivity } from "./components";
 import { FeedPreview } from "./FeedPreview";
 
@@ -254,73 +254,101 @@ export function PrivacySettings({
   settings: Settings;
   update: (patch: Partial<Settings>) => Promise<unknown>;
 }) {
+  const [mode, setMode] = useState(settings.connectionMode);
+  const [key, setKey] = useState(isExtension ? settings.openRouterKey : "");
+  const [limit, setLimit] = useState(String(settings.dailyCallLimit));
   const [endpoint, setEndpoint] = useState(settings.endpoint);
-  const [token, setToken] = useState(settings.serviceToken);
+  const [token, setToken] = useState(isExtension ? settings.serviceToken : "");
   const [connection, setConnection] = useState("");
   const [connectionError, setConnectionError] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
+    setMode(settings.connectionMode);
+    setKey(isExtension ? settings.openRouterKey : "");
+    setLimit(String(settings.dailyCallLimit));
     setEndpoint(settings.endpoint);
-    setToken(settings.serviceToken);
-  }, [settings.endpoint, settings.serviceToken]);
-  const dirty =
-    endpoint !== settings.endpoint || token !== settings.serviceToken;
+    setToken(isExtension ? settings.serviceToken : "");
+  }, [settings.connectionMode, settings.openRouterKey, settings.dailyCallLimit,
+    settings.endpoint, settings.serviceToken]);
+  const direct = mode === "direct";
+  const dirty = mode !== settings.connectionMode || (direct
+    ? key !== settings.openRouterKey || limit !== String(settings.dailyCallLimit)
+    : endpoint !== settings.endpoint || token !== settings.serviceToken);
+  const configured = direct ? Boolean(settings.openRouterKey) : Boolean(settings.endpoint);
+  function edit(action: () => void) {
+    action();
+    setConnection("");
+    setConnectionError(false);
+  }
   async function saveConnection(event?: FormEvent) {
     event?.preventDefault();
+    if (!isExtension || busy) return;
+    setBusy(true);
     setConnectionError(false);
     try {
-      const url = new URL(endpoint.trim());
-      if (url.username || url.password || url.search || url.hash)
-        throw new Error(
-          "Use a detector URL without credentials, query parameters or a fragment.",
-        );
-      if (
-        url.protocol !== "https:" &&
-        !(
-          url.protocol === "http:" &&
-          ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
-        )
-      )
-        throw new Error("Use HTTPS, or HTTP for a detector on localhost.");
-      const saved = await update({
-        endpoint: url.href.replace(/\/$/, ""),
-        serviceToken: token.trim(),
-        consent: endpoint !== settings.endpoint ? false : settings.consent,
-      });
+      let patch: Partial<Settings> = { connectionMode: mode };
+      if (direct) {
+        if (!key.trim()) throw new Error("Add your OpenRouter API key before saving.");
+        const dailyCallLimit = Number(limit);
+        if (!Number.isInteger(dailyCallLimit) || dailyCallLimit < 1 || dailyCallLimit > 10000)
+          throw new Error("Choose a whole number from 1 to 10,000 requests per day.");
+        patch = { ...patch, openRouterKey: key.trim(), dailyCallLimit };
+      } else {
+        const url = new URL(endpoint.trim());
+        if (url.username || url.password || url.search || url.hash)
+          throw new Error("Use a detector URL without credentials, query parameters or a fragment.");
+        if (url.protocol !== "https:" && !(url.protocol === "http:" &&
+          ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))
+          throw new Error("Use HTTPS, or HTTP for a detector on localhost.");
+        patch = { ...patch, endpoint: url.href.replace(/\/$/, ""), serviceToken: token.trim() };
+      }
+      const saved = await update(patch);
       if (saved === false)
-        throw new Error(
-          "The connection could not be saved. Check the settings error and try again.",
-        );
-      setConnection("Connection saved.");
-      return true;
+        throw new Error("The connection could not be saved. Check the settings error and try again.");
+      const changedConnection = mode !== settings.connectionMode || (direct
+        ? patch.openRouterKey !== settings.openRouterKey
+        : patch.endpoint !== settings.endpoint || patch.serviceToken !== settings.serviceToken);
+      setConnection(settings.consent && !changedConnection
+        ? "Settings saved. Content analysis is still allowed."
+        : "Connection saved. Check the connection, then allow content analysis below.");
     } catch (reason) {
       setConnectionError(true);
-      setConnection(
-        reason instanceof Error ? reason.message : "Enter a valid service URL.",
-      );
-      return false;
+      setConnection(reason instanceof Error ? reason.message : "Could not save the connection.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function removeKey() {
+    if (!isExtension || busy) return;
+    setBusy(true);
+    setConnectionError(false);
+    try {
+      const saved = await update({ openRouterKey: "", consent: false });
+      if (saved === false) throw new Error("The key could not be removed. Try again.");
+      setKey("");
+      setConnection("API key removed. Content analysis is off.");
+    } catch (reason) {
+      setConnectionError(true);
+      setConnection(reason instanceof Error ? reason.message : "Could not remove the key.");
+    } finally {
+      setBusy(false);
     }
   }
   async function testConnection() {
+    if (!isExtension || busy || dirty || !configured) return;
     setBusy(true);
-    setConnection("Checking the detector…");
+    setConnection(direct ? "Checking your OpenRouter key…" : "Checking the detector…");
     setConnectionError(false);
     try {
-      if (dirty && !(await saveConnection())) return;
-      const result = await request<{ ok: boolean; error?: string }>({
-        type: "HEALTH_CHECK",
-      });
+      const result = await request<{ ok: boolean; error?: string }>({ type: "HEALTH_CHECK" });
       if (!result.ok)
-        throw new Error(
-          result.error ||
-            "The detector did not respond. Check the URL and service token.",
-        );
-      setConnection("Connected. The detector is ready.");
+        throw new Error(result.error || "Connection failed. Check your saved connection details.");
+      setConnection(direct
+        ? "Connected to OpenRouter. This check did not run paid analysis."
+        : "Connected. The detector is ready.");
     } catch (reason) {
       setConnectionError(true);
-      setConnection(
-        reason instanceof Error ? reason.message : "Connection failed.",
-      );
+      setConnection(reason instanceof Error ? reason.message : "Connection failed.");
     } finally {
       setBusy(false);
     }
@@ -328,129 +356,184 @@ export function PrivacySettings({
   return (
     <>
       <div className="page-heading">
-        <h1>A clear view of what leaves your browser.</h1>
+        <h1>Your connection. Your control.</h1>
         <p>
-          Detection uses a service you choose. Connect it, review what gets
-          shared, then turn on content analysis.
+          Add your own OpenRouter key, review what gets shared, then allow content
+          analysis. No separate server is needed.
         </p>
       </div>
       <Callout.Root className="privacy-callout" size="2">
-        <Callout.Icon>
-          <LockKeyhole size={23} />
-        </Callout.Icon>
+        <Callout.Icon><LockKeyhole size={23} /></Callout.Icon>
         <div>
-          <h2>Your API key stays on your server.</h2>
+          <h2>{direct ? "You pay for your own usage." : "An optional service you control."}</h2>
           <Callout.Text>
-            The extension talks to a detector service. That service calls the
-            model provider. Never put your OpenRouter key in the extension.
+            {direct
+              ? "NO SLOP sends text to OpenRouter using your key. Set a spending cap on that key in OpenRouter to control provider charges."
+              : "Your detector calls the model provider using its server-side key. The detector operator controls provider usage and any destination fetching."}
           </Callout.Text>
         </div>
       </Callout.Root>
       <section className="connection-section">
-        <h2>Detector connection</h2>
+        <h2>Connection</h2>
+        <RadioCards.Root
+          className="connection-modes"
+          size="1"
+          highContrast
+          columns="2"
+          gap="2"
+          value={mode}
+          disabled={busy}
+          onValueChange={(value) => {
+            if (value === "direct" || value === "server") edit(() => setMode(value));
+          }}
+          aria-label="Analysis connection"
+        >
+          <RadioCards.Item value="direct">
+            <span>OpenRouter<small>No server needed</small></span>
+          </RadioCards.Item>
+          <RadioCards.Item value="server">
+            <span>Self-hosted detector<small>Advanced · optional</small></span>
+          </RadioCards.Item>
+        </RadioCards.Root>
+        {!isExtension && (
+          <p className="field-hint" id="preview-credentials-hint">
+            Preview only. Add credentials in the installed extension; this page
+            cannot save keys or connect to a provider.
+          </p>
+        )}
         <form onSubmit={saveConnection}>
-          <label className="field-label" htmlFor="endpoint">
-            Service URL
-          </label>
-          <TextField.Root
-            className="service-input"
-            size="3"
-            id="endpoint"
-            type="url"
-            value={endpoint}
-            onChange={(event) => setEndpoint(event.target.value)}
-            placeholder="https://your-detector.example"
-            autoComplete="url"
-            spellCheck={false}
-            aria-describedby="endpoint-hint"
-          />
-          <p className="field-hint" id="endpoint-hint">
-            Run your own detector with your OpenRouter key. You pay the provider
-            directly for detection; no hosted service is included.
-          </p>
-          <label className="field-label" htmlFor="service-token">
-            Service access token <span>Optional</span>
-          </label>
-          <TextField.Root
-            className="service-input"
-            size="3"
-            id="service-token"
-            type="password"
-            value={token}
-            onChange={(event) => setToken(event.target.value)}
-            placeholder="Provided by the detector operator"
-            autoComplete="off"
-            spellCheck={false}
-            aria-describedby="service-token-hint"
-          />
-          <p className="field-hint" id="service-token-hint">
-            A service token, not an OpenRouter API key. Stored locally in this
-            browser.
-          </p>
-          <div className="button-row">
-            <Button
-              className="button button-primary"
-              highContrast
-              size="2"
-              variant="solid"
-              type="submit"
-              disabled={!dirty || busy}
-            >
+          {direct ? (
+            <>
+              <label className="field-label" htmlFor="openrouter-key">OpenRouter API key</label>
+              <TextField.Root
+                className="service-input"
+                size="3"
+                id="openrouter-key"
+                type="password"
+                value={key}
+                disabled={!isExtension || busy}
+                onChange={(event) => edit(() => setKey(event.target.value))}
+                placeholder={isExtension ? "Paste your own API key" : "Available in the installed extension"}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                aria-describedby="openrouter-key-hint"
+              />
+              <p className="field-hint" id="openrouter-key-hint">
+                <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">Create a key and set its spending cap</a>.
+                {" "}Your key is saved on this device, in extension storage. It is not
+                synced or shared with web pages. Remove it here at any time.
+              </p>
+              <label className="field-label" htmlFor="daily-call-limit">Daily request allowance</label>
+              <TextField.Root
+                className="daily-limit-input"
+                size="3"
+                id="daily-call-limit"
+                type="number"
+                min="1"
+                max="10000"
+                step="1"
+                value={limit}
+                disabled={busy}
+                onChange={(event) => edit(() => setLimit(event.target.value))}
+                aria-describedby="daily-call-limit-hint"
+              />
+              <p className="field-hint" id="daily-call-limit-hint">
+                Maximum analysis requests per day on this device, from 1 to 10,000.
+                Resets at midnight UTC. This is a request limit, not a dollar budget. Use OpenRouter’s key
+                spending cap to limit costs.
+              </p>
+            </>
+          ) : (
+            <>
+              <label className="field-label" htmlFor="endpoint">Service URL</label>
+              <TextField.Root
+                className="service-input" size="3" id="endpoint" type="url"
+                value={endpoint} disabled={busy}
+                onChange={(event) => edit(() => setEndpoint(event.target.value))}
+                placeholder="https://your-detector.example" autoComplete="url"
+                spellCheck={false} aria-describedby="endpoint-hint"
+              />
+              <p className="field-hint" id="endpoint-hint">
+                Use a detector you run or trust. It must remain running while
+                you browse. Direct OpenRouter mode does not need this service.
+              </p>
+              <label className="field-label" htmlFor="service-token">
+                Service access token <span>Optional</span>
+              </label>
+              <TextField.Root
+                className="service-input" size="3" id="service-token" type="password"
+                value={token} disabled={!isExtension || busy}
+                onChange={(event) => edit(() => setToken(event.target.value))}
+                placeholder={isExtension ? "Provided by the detector operator" : "Available in the installed extension"}
+                autoComplete="off" spellCheck={false} aria-describedby="service-token-hint"
+              />
+              <p className="field-hint" id="service-token-hint">
+                A service token, not an OpenRouter API key. Saved on this device
+                in extension storage; never synced.
+              </p>
+            </>
+          )}
+          <div className="button-row connection-actions">
+            <Button className="button button-primary" highContrast size="2" variant="solid"
+              type="submit" disabled={!isExtension || !dirty || busy || (direct && !key.trim())}>
               Save connection
             </Button>
-            <Button
-              className="button button-secondary"
-              size="2"
-              variant="soft"
-              type="button"
-              disabled={busy}
-              onClick={testConnection}
-            >
-              {busy ? "Checking…" : "Test connection"}
+            <Button className="button button-secondary" size="2" variant="soft" type="button"
+              disabled={!isExtension || busy || dirty || !configured} onClick={testConnection}>
+              {busy ? "Working…" : "Check connection"}
             </Button>
+            {direct && settings.openRouterKey && isExtension && (
+              <Button size="2" variant="ghost" color="gray" type="button"
+                disabled={busy} onClick={removeKey}>Remove key</Button>
+            )}
           </div>
+          {isExtension && dirty && <p className="field-hint">Save these changes before checking or allowing analysis.</p>}
+          {isExtension && direct && !dirty && !configured && <p className="field-hint">Save a key to check your connection. The check does not run paid analysis.</p>}
           {connection && (
-            <Callout.Root
-              role="status"
-              size="1"
-              color={connectionError ? "red" : "gray"}
-              className={connectionError ? "error-message" : "success-message"}
-            >
+            <Callout.Root role="status" size="1" color={connectionError ? "red" : "gray"}
+              className={connectionError ? "error-message" : "success-message"}>
               <Callout.Text>{connection}</Callout.Text>
             </Callout.Root>
           )}
         </form>
       </section>
       <section className="preferences-section">
-        <h2>What the detector may see</h2>
+        <h2>{direct ? "What OpenRouter may see" : "What the detector may see"}</h2>
         <div className="data-description">
           <p>
             <strong>Content snippets and context.</strong> Titles, visible text,
-            captions, surrounding context and content links may be sent to your
-            detector and its model provider, including content in a signed-in
-            feed. Password fields and direct-message interfaces are excluded
-            where recognized. Avoid enabling it on sensitive sites.
+            captions, surrounding context{direct ? "" : " and content links"} may be sent to
+            {direct ? " OpenRouter and its model provider" : " your detector and its model provider"},
+            including content in a signed-in feed. Password fields and direct-message
+            interfaces are excluded where recognized. Avoid enabling it on sensitive sites.
           </p>
         </div>
-        <Toggle
-          checked={settings.inspectDestinations}
-          onChange={(inspectDestinations) => update({ inspectDestinations })}
-          label="Inspect search destinations"
-          description="Let the service fetch public result pages before you visit them. This adds context and may increase latency."
-        />
-        <div
-          className={`consent-box ${settings.consent ? "consent-granted" : ""}`}
-        >
+        {!direct && (
+          <Toggle
+            checked={settings.inspectDestinations}
+            disabled={dirty || busy || !isExtension}
+            onChange={(inspectDestinations) => update({ inspectDestinations })}
+            label="Inspect search destinations"
+            description="Let the service fetch public result pages before you visit them. This adds context and may increase latency."
+          />
+        )}
+        <div className={`consent-box ${settings.consent && !dirty ? "consent-granted" : ""}`}>
           <Toggle
             checked={settings.consent}
+            disabled={!isExtension || busy || (!settings.consent && (dirty || !configured))}
             onChange={(consent) => update({ consent })}
             label="Allow content analysis"
-            description="I allow text snippets and context from enabled sites to be sent to this detector and its model provider. When selected above, public search destination pages may also be fetched and analyzed. Images are not analyzed. I can revoke this at any time."
+            description={direct
+              ? "I allow text snippets and context from enabled sites to be sent directly to OpenRouter and its model provider using my key. Images are not analyzed. Linked pages are not fetched. I can revoke this at any time."
+              : "I allow text snippets and context from enabled sites to be sent to this detector and its model provider. When selected above, public search destination pages may also be fetched and analyzed. Images are not analyzed. I can revoke this at any time."}
           />
           <p>
-            {settings.consent
-              ? "Content analysis is allowed for this detector."
-              : "Nothing is sent for analysis until you turn this on."}
+            {dirty
+              ? "Changes take effect when saved. A new key or service requires consent again."
+              : settings.consent
+                ? "Content analysis is allowed for this connection."
+                : "Nothing is sent for analysis until you turn this on."}
           </p>
         </div>
       </section>
@@ -493,7 +576,7 @@ export function AboutSettings() {
           privacy boundaries.
         </p>
         <div className="about-meta">
-          <span>Version 0.1.0</span>
+          <span>Version 0.2.0</span>
           <span>AGPL-3.0</span>
           <span>
             <Heart size={13} /> Community-built

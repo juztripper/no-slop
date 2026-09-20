@@ -2,10 +2,20 @@
 
 Do not post API keys, service tokens, private content, or exploitable vulnerability details in a public issue. Use **Security → Report a vulnerability** in this GitHub repository to report privately. If that option is unavailable, open an issue asking for a private reporting channel without including vulnerability details.
 
-The current threat model includes hostile web content, malicious URLs and redirects, invalid model responses, untrusted content-script messages, overlarge batches, and requests intended to exhaust the detector operator's model budget. See [deployment boundaries](docs/DEPLOYMENT.md) and the server tests.
+The threat model includes hostile page content, untrusted content-script messages, malformed model responses, oversized batches, credential exposure and requests intended to exhaust the user's provider budget. Optional self-hosted destination inspection also handles malicious URLs, DNS answers and redirects. See [deployment boundaries](docs/DEPLOYMENT.md), [architecture](docs/ARCHITECTURE.md) and the corresponding tests.
 
-The developer preview is self-hosted: each operator supplies their own OpenRouter key and pays for their own provider usage. No project-funded detector is included. Provider keys remain server-side; never paste them into extension settings or commit them. Keep the local detector bound to loopback, and configure authentication, exact allowed origins, rate limits and provider spending controls before exposing a service to other users.
+## Direct provider credentials
 
-Content analysis requires consent. The browser fails open on network/model errors. Remote model output is parsed as data and never executed as code. Destination requests validate public DNS addresses and pin the connection; every redirect is checked again. Unknown extraction layouts remain visible.
+In direct mode, the user supplies their own OpenRouter key through the extension's settings. The key is stored in device-local `chrome.storage.local`, restricted to trusted extension contexts. It is never included in content-script settings, exposed to web pages, stored in Chrome Sync or bundled into a build. Browser-profile access and extension debugging can still expose local secrets; this storage is not an encrypted vault.
 
-This is a new project. Passing tests is not an independent security audit. The source release and unpacked Chromium build are a developer preview, not a browser-store listing or a qualified hosted service. Anyone operating a public detector is responsible for reviewing its logging, retention, authentication and spending limits. Browser-store publication requires its own permission and data-use review.
+Use a dedicated OpenRouter key with a provider spending limit. The extension's persistent daily request cap is a count of paid calls, including failures, not a monetary cap or an abuse-proof account quota. Clearing extension data resets it. The project supplies no maintainer-funded key or service. Never commit keys, put them in fixtures, or include them in bug reports.
+
+Analysis requires explicit consent. Existing self-hosted installations retain their mode; changing mode or credentials requires consent again. The background validates the sender and bounded input before calling the provider. Direct processing uses a fixed OpenRouter endpoint, forbids redirected credential-bearing requests, and does not fetch linked destinations. Model output is validated as data and never executed. Network/model errors leave content visible.
+
+## Optional detector service
+
+A self-hosted detector keeps the OpenRouter key in its environment. The extension's service token is a separate access credential, not the provider key. Keep local detectors bound to loopback. Before exposing one, configure authentication, exact allowed origins, persistent budgets, rate limits and provider spending controls. CORS alone is not authentication.
+
+Destination requests validate public DNS addresses and pin the connection; every redirect is checked again. Unknown extraction layouts remain visible. Anyone operating a public detector must review its logging, retention, access controls, abuse handling and spending limits.
+
+This is a new project. Passing tests is not an independent security audit. The source and unpacked Chromium build remain a developer preview; browser-store publication and hosted services require their own qualification and data-use review.

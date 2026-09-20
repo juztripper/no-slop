@@ -118,8 +118,10 @@ export function Popup() {
         >
           <ShieldCheck size={19} />
           <span>
-            <strong>Set up your detector</strong>
-            <span>Connect and review privacy to start.</span>
+            <strong>Connect NO SLOP</strong>
+            <span>{settings.connectionMode === "direct"
+              ? "Add your key and review privacy to start."
+              : "Review your connection and privacy to start."}</span>
           </span>
           <ChevronRight size={16} />
         </Button>

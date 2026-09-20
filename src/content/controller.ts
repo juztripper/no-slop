@@ -233,7 +233,7 @@ export class ContentController {
       const parsed = AnalyzeResponseSchema.safeParse(response);
       if (!parsed.success) throw new Error(response && typeof response === 'object' && 'error' in response && typeof response.error === 'string' ? response.error : 'The detector returned an invalid response.');
       const verdicts = new Map(parsed.data.verdicts.map(verdict => [verdict.id, verdict]));
-      if (parsed.data.errors.length) this.evidenceWarning = `Some items have incomplete evidence: ${parsed.data.errors[0].message}`.slice(0, 200);
+      if (parsed.data.errors.length) this.evidenceWarning = `Some items could not be fully checked: ${parsed.data.errors[0].message}`.slice(0, 200);
       let failed = 0;
       for (const candidate of batch) {
         const verdict = verdicts.get(candidate.item.id);
@@ -249,7 +249,10 @@ export class ContentController {
       }
       while (this.cache.size > 800) this.cache.delete(this.cache.keys().next().value!);
       while (this.assessed.size > 1200) this.assessed.delete(this.assessed.keys().next().value!);
-      if (failed) this.setStatus('error', `${failed} item${failed === 1 ? '' : 's'} could not be assessed. Original content remains visible. Rescan to retry.`);
+      if (failed) {
+        const reason = parsed.data.errors.find(error => !verdicts.has(error.id))?.message;
+        this.setStatus('error', `${failed} item${failed === 1 ? '' : 's'} could not be assessed. ${reason || 'Original content remains visible. Rescan to retry.'}`);
+      }
       else this.setStatus(this.queue.size ? 'scanning' : 'ready');
     } catch (error) {
       if (generation !== this.generation || this.disposed) return;
@@ -282,7 +285,7 @@ export class ContentController {
   updateSettings(settings: Settings): void {
     if (this.disposed) return;
     clearTimeout(this.retryTimer);
-    const inferenceChanged = this.settings.inspectThumbnails !== settings.inspectThumbnails || this.settings.inspectDestinations !== settings.inspectDestinations || this.settings.endpoint !== settings.endpoint || this.settings.serviceToken !== settings.serviceToken;
+    const inferenceChanged = this.settings.inspectThumbnails !== settings.inspectThumbnails || this.settings.inspectDestinations !== settings.inspectDestinations || this.settings.endpoint !== settings.endpoint || this.settings.connectionMode !== settings.connectionMode;
     this.settings = settings;
     this.generation++;
     this.queue.clear();

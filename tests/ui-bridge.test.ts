@@ -52,8 +52,35 @@ describe("settings UI bridge", () => {
     vi.stubGlobal("fetch", fetch);
     const { request } = await import("../src/ui/bridge");
     await expect(request({ type: "HEALTH_CHECK" })).rejects.toThrow(
-      "This preview never contacts a detector",
+      "This preview never contacts a provider or detector",
     );
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("scrubs existing credentials from preview storage before returning settings", async () => {
+    vi.stubGlobal("chrome", undefined);
+    let saved = JSON.stringify({ ...DEFAULT_SETTINGS, openRouterKey: "old-preview-key", serviceToken: "old-service-token", consent: true });
+    vi.stubGlobal("localStorage", {
+      getItem: () => saved,
+      setItem: (_key: string, value: string) => { saved = value; },
+    });
+    const { request } = await import("../src/ui/bridge");
+    expect(await request({ type: "GET_SETTINGS" })).toMatchObject({ openRouterKey: "", serviceToken: "", consent: false });
+    expect(saved).not.toContain("old-preview-key");
+    expect(saved).not.toContain("old-service-token");
+  });
+
+  it("refuses to persist credentials or analysis consent from preview updates", async () => {
+    vi.stubGlobal("chrome", undefined);
+    let saved = JSON.stringify(DEFAULT_SETTINGS);
+    vi.stubGlobal("localStorage", {
+      getItem: () => saved,
+      setItem: (_key: string, value: string) => { saved = value; },
+    });
+    const { request } = await import("../src/ui/bridge");
+    await request({ type: "SAVE_SETTINGS", settings: { openRouterKey: "new-preview-key", serviceToken: "new-service-token", consent: true, threshold: 0.7 } });
+    expect(JSON.parse(saved)).toMatchObject({ openRouterKey: "", serviceToken: "", consent: false, threshold: 0.7 });
+    expect(saved).not.toContain("new-preview-key");
+    expect(saved).not.toContain("new-service-token");
   });
 });
