@@ -248,37 +248,6 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
 .feed-copy h4 { font-size: 12px; font-weight: 500; line-height: 1.45; margin-bottom: 6px; }
 .feed-copy p { font-size: 11px; color: var(--muted); line-height: 1.4; }
 .feed-copy > span { display: block; font-size: 10px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
-.example-cover {
-  position: absolute;
-  inset: 12px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  padding: 8px 12px;
-  background: #fcf5f6f7;
-  border: 1px solid var(--stamp-line);
-  border-radius: var(--radius-2);
-  backdrop-filter: blur(6px);
-  animation: cover-in 160ms ease-out both;
-}
-.example-cover > div { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.example-cover strong { color: var(--stamp); font-size: 12px; font-weight: 500; }
-.example-cover > div > span { color: var(--muted); font-size: 11px; }
-.example-cover .rt-Button { margin-top: 3px; }
-.ink-stamp {
-  display: block;
-  font-family: var(--brand-font);
-  font-size: 27px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: -0.8px;
-  color: var(--stamp);
-  border: 2px solid currentColor;
-  padding: 5px 7px;
-  transform: rotate(-7deg);
-  animation: stamp-in 300ms cubic-bezier(0.18, 0.72, 0.24, 1.08) both;
-}
 .preview-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
 .preview-disclaimer { padding: 0 16px 14px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .consideration { margin-top: 20px; }
@@ -373,22 +342,6 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
 .popup-message { font-size: 11px; color: var(--muted); min-height: 28px; padding: 6px 0; line-height: 1.6; }
 .popup-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding: 12px 0; color: var(--muted); font-size: 11px; }
 
-/* Motion is only feedback. Both user and operating-system preferences win. */
-.example-hidden { animation: eliminate 320ms ease-in-out forwards; pointer-events: none; }
-@keyframes stamp-in {
-  0% { opacity: 0; transform: rotate(-10deg) scale(1.3); }
-  70% { opacity: 1; transform: rotate(-6deg) scale(0.98); }
-  100% { opacity: 1; transform: rotate(-7deg) scale(1); }
-}
-@keyframes cover-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes eliminate {
-  0% { max-height: 180px; opacity: 1; transform: scale(1); }
-  45% { max-height: 180px; opacity: 0.2; transform: scale(0.985); }
-  100% { max-height: 0; opacity: 0; transform: scale(0.985); border-color: transparent; visibility: hidden; }
-}
-.no-motion .example-hidden { animation: none; display: none; }
-.no-motion .ink-stamp, .no-motion .example-cover { animation: none; }
-
 @media (max-width: 1150px) {
   .app-shell { grid-template-columns: 204px minmax(0, 1fr); }
   .sidebar { padding-left: 16px; padding-right: 16px; }
@@ -406,8 +359,6 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
   .preview-feed { padding: 0 12px; }
   .mode-control .mode-option { flex-direction: column; align-items: flex-start; gap: 8px; }
   .mode-option small { font-size: 11px; }
-  .example-cover { gap: 16px; }
-  .ink-stamp { font-size: 26px; }
 }
 @media (max-width: 940px) {
   .app-shell { grid-template-columns: 192px minmax(0, 1fr); }
@@ -426,7 +377,6 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
   .thumbnail { width: 128px; height: 80px; }
   .feed-copy h4 { font-size: 13px; }
   .feed-copy > span { display: block; }
-  .example-cover { gap: 28px; }
   .preferences-pair, .platform-list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .save-status { display: none; }
   .preview-banner { align-items: flex-start; }
@@ -463,8 +413,6 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
   .thumbnail { width: 96px; height: 66px; }
   .feed-copy h4 { font-size: 12px; }
   .feed-copy > span { display: none; }
-  .example-cover { gap: 20px; }
-  .example-cover > div > span { font-size: 10px; }
   .preview-bottom { padding-left: 12px; padding-right: 12px; font-size: 10px; }
   .preview-disclaimer { padding-left: 12px; padding-right: 12px; }
   .preferences-section { margin-top: 32px; padding-top: 24px; }
@@ -489,13 +437,10 @@ h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
   .intro h1 { font-size: 29px; }
   .mode-control .mode-option { flex-direction: column; align-items: flex-start; }
   .thumbnail { width: 80px; height: 58px; }
-  .example-cover { gap: 12px; padding-left: 8px; padding-right: 8px; }
   .page-footer > span:first-child { max-width: 175px; }
   .popup-body, .popup { width: 100%; min-width: 320px; }
   .popup { padding-left: 16px; padding-right: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-delay: 0ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
-  .example-hidden { display: none; }
-  .ink-stamp, .example-cover { animation: none !important; }
 }

@@ -21,7 +21,10 @@ export const VerdictSchema = z.object({
   model: z.string(),
 });
 export type Verdict = z.infer<typeof VerdictSchema>;
-export const AnalyzeRequestSchema = z.object({ items: z.array(ContentItemSchema).min(1).max(8), inspectThumbnails: z.boolean().default(true), inspectDestinations: z.boolean().default(false) }).strict();
+// Normalize the legacy preference too: existing installs must stop image work
+// on upgrade, rather than silently keeping their previously saved `true` value.
+const TextOnlyThumbnailSetting = z.boolean().default(false).transform((): boolean => false);
+export const AnalyzeRequestSchema = z.object({ items: z.array(ContentItemSchema).min(1).max(8), inspectThumbnails: TextOnlyThumbnailSetting, inspectDestinations: z.boolean().default(false) }).strict();
 export const AnalyzeResponseSchema = z.object({ verdicts: z.array(VerdictSchema), errors: z.array(z.object({ id: z.string(), message: z.string() })).default([]) });
 export type AnalyzeResponse = z.infer<typeof AnalyzeResponseSchema>;
 export const AnalysisDeferredSchema = z.object({
@@ -34,7 +37,7 @@ export const SettingsSchema = z.object({
   enabled: z.boolean().default(true), aiSlop: z.boolean().default(true), humanSlop: z.boolean().default(true),
   mode: z.enum(['censor', 'hide']).default('censor'), threshold: z.number().min(0.6).max(0.99).default(0.85),
   animations: z.boolean().default(true), annotateParagraphs: z.boolean().default(true),
-  inspectThumbnails: z.boolean().default(true), inspectDestinations: z.boolean().default(true),
+  inspectThumbnails: TextOnlyThumbnailSetting, inspectDestinations: z.boolean().default(true),
   endpoint: z.string().max(2048).default('http://localhost:8787'),
   serviceToken: z.string().max(500).default(''), consent: z.boolean().default(false),
   allowlist: z.array(z.string().max(253)).max(500).default([]),

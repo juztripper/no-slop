@@ -16,7 +16,9 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm audit --omit=dev --audit-level=high
+      - run: npx tsx scripts/package-release.ts
       - uses: actions/upload-artifact@v4
         with:
           name: no-slop-chromium
-          path: dist/
+          path: artifacts/releases/
+          if-no-files-found: error

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge, Button } from "@radix-ui/themes";
-import { Eye, RotateCcw, Youtube } from "lucide-react";
+import { RotateCcw, Youtube } from "lucide-react";
 import type { Settings } from "../shared/contracts";
+import { presentCandidate } from "../content/presentation";
 
 export function VideoArt({ kind }: { kind: "repair" | "bait" | "garden" }) {
   if (kind === "repair")
@@ -90,24 +91,39 @@ export function VideoArt({ kind }: { kind: "repair" | "bait" | "garden" }) {
 export function FeedPreview({ settings }: { settings: Settings }) {
   const [processed, setProcessed] = useState(true);
   const [revealed, setRevealed] = useState(false);
-  const [sequence, setSequence] = useState(0);
+  const example = useRef<HTMLDivElement>(null);
+  const replayTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const active =
     settings.enabled &&
     settings.aiSlop &&
     processed &&
     !revealed &&
     settings.threshold <= 0.96;
+  useEffect(() => {
+    if (!active || !example.current) return;
+    const presentation = presentCandidate({
+      element: example.current, fingerprint: 'example-slop', preserveContext: false,
+      item: { id: 'example-slop', platform: 'youtube', kind: 'video', title: 'Example result', text: '' },
+    }, {
+      id: 'example-slop', category: 'ai-slop', confidence: .96,
+      reasons: ['Mass-produced promises with no useful supporting detail.'],
+      signals: { lowQuality: .99, synthetic: .99, clickbait: .99 },
+      evidence: { text: true, thumbnail: false, destination: false }, model: 'illustration-only',
+    }, settings, () => setRevealed(true), window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return () => presentation.restore();
+  }, [active, settings.mode, settings.animations]);
+  useEffect(() => () => clearTimeout(replayTimer.current), []);
   const run = () => {
+    clearTimeout(replayTimer.current);
     setRevealed(false);
     setProcessed(false);
-    window.setTimeout(() => {
+    replayTimer.current = setTimeout(() => {
       setProcessed(true);
-      setSequence((value) => value + 1);
     }, 350);
   };
   return (
     <section
-      className={`preview-panel ${settings.animations ? "" : "no-motion"}`}
+      className="preview-panel"
       aria-label="Illustrative filter preview"
     >
       <div className="preview-top">
@@ -128,13 +144,8 @@ export function FeedPreview({ settings }: { settings: Settings }) {
             <span>A careful repair, start to finish.</span>
           </div>
         </div>
-        <div
-          key={sequence}
-          className={`feed-item-shell ${active && settings.mode === "hide" ? "example-hidden" : ""}`}
-        >
-          <div
-            className={`feed-row bait-row ${active && settings.mode === "censor" ? "is-censored" : ""}`}
-          >
+        <div ref={example} className="feed-item-shell">
+          <div className="feed-row bait-row">
             <div className="thumbnail">
               <VideoArt kind="bait" />
               <span>08:02</span>
@@ -144,18 +155,6 @@ export function FeedPreview({ settings }: { settings: Settings }) {
               <p>Instant Fortune</p>
               <span>Mass-produced, empty promises.</span>
             </div>
-            {active && settings.mode === "censor" && (
-              <div className="example-cover">
-                <span className="ink-stamp">SLOP</span>
-                <div>
-                  <strong>Likely AI slop</strong>
-                  <span>Low effort. Big promises.</span>
-                  <Button size="1" variant="ghost" color="gray" onClick={() => setRevealed(true)}>
-                    <Eye size={12} /> Show anyway
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         <div className="feed-row">

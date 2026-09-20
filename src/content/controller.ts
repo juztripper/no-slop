@@ -2,7 +2,7 @@ import { AnalysisDeferredSchema, AnalyzeResponseSchema, DEFAULT_SETTINGS, EMPTY_
 import { extractCandidates, isEligibleContentUnit, isPrivatePage, platformForUrl, type Candidate } from './adapters';
 import { presentCandidate, type Presentation } from './presentation';
 
-export interface RuntimeBridge { send(message: RuntimeMessage): Promise<unknown>; }
+export interface RuntimeBridge { send(message: RuntimeMessage): Promise<unknown>; isConnected?(): boolean; }
 interface RecordState { candidate: Candidate; verdict?: Verdict; presentation?: Presentation; state: 'waiting' | 'queued' | 'done' | 'error'; }
 
 /** One visible batch at a time, with bounded page state and generation-checked async work. */
@@ -39,6 +39,7 @@ export class ContentController {
   get pageStats(): PageStats { return { ...this.stats }; }
 
   async start(): Promise<void> {
+    if (this.disposed) return;
     try {
       const settings = await this.bridge.send({ type: 'GET_SETTINGS' });
       if (settings && typeof settings === 'object' && 'enabled' in settings) this.settings = settings as Settings;
@@ -78,6 +79,8 @@ export class ContentController {
 
   private onScroll = () => this.scheduleScan();
   private onNavigation = () => {
+    // The existing navigation tick also retires orphaned scripts in quiet tabs.
+    if (this.disposed || this.bridge.isConnected?.() === false) { this.dispose(); return; }
     if (this.lastUrl === this.win.location.href) return;
     this.generation++;
     clearTimeout(this.retryTimer);
@@ -97,8 +100,9 @@ export class ContentController {
   };
 
   private allowed(): boolean {
+    if (this.disposed || this.bridge.isConnected?.() === false) { this.dispose(); return false; }
     const url = new URL(this.win.location.href);
-    return !this.disposed && !this.restored && this.settings.enabled && this.settings.consent &&
+    return !this.restored && this.settings.enabled && this.settings.consent &&
       !isPrivatePage(url) && !isAllowlisted(url.hostname, this.settings.allowlist) &&
       this.settings.platforms[platformForUrl(url, this.doc)] !== false;
   }
@@ -114,6 +118,7 @@ export class ContentController {
   }
 
   scan(): void {
+    if (this.disposed) return;
     if (this.lastUrl !== this.win.location.href) { this.onNavigation(); return; }
     if (!this.allowed()) { this.restoreAll(); this.setStatus('paused'); return; }
     if (Date.now() < this.cooldownUntil) return;
@@ -275,6 +280,7 @@ export class ContentController {
   }
 
   updateSettings(settings: Settings): void {
+    if (this.disposed) return;
     clearTimeout(this.retryTimer);
     const inferenceChanged = this.settings.inspectThumbnails !== settings.inspectThumbnails || this.settings.inspectDestinations !== settings.inspectDestinations || this.settings.endpoint !== settings.endpoint || this.settings.serviceToken !== settings.serviceToken;
     this.settings = settings;
@@ -295,6 +301,7 @@ export class ContentController {
   }
 
   restorePage(): void {
+    if (this.disposed) return;
     clearTimeout(this.retryTimer);
     this.generation++;
     this.restored = true;
@@ -304,6 +311,7 @@ export class ContentController {
   }
 
   rescan(): void {
+    if (this.disposed) return;
     clearTimeout(this.retryTimer);
     this.generation++;
     this.restored = false;
@@ -331,13 +339,16 @@ export class ContentController {
   }
 
   private publish(): void {
+    if (this.disposed) return;
     this.stats.scanned = this.assessed.size;
     this.stats.filtered = [...this.records.values()].filter(record => record.presentation).length;
     this.stats.uncertain = [...this.assessed.values()].filter(category => category === 'uncertain').length;
-    void this.bridge.send({ type: 'PAGE_STATS', stats: { ...this.stats } }).catch(() => {});
+    // Status is best-effort. A bridge may throw before it returns a promise.
+    try { void this.bridge.send({ type: 'PAGE_STATS', stats: { ...this.stats } }).catch(() => {}); } catch { /* Disconnected runtime. */ }
   }
 
   dispose(): void {
+    if (this.disposed) return;
     this.disposed = true;
     this.generation++;
     this.observer?.disconnect();
@@ -353,5 +364,9 @@ export class ContentController {
     this.restoreAll();
     this.queue.clear();
     this.records.clear();
+    this.cache.clear();
+    this.assessed.clear();
+    this.dismissed.clear();
+    this.dirty.clear();
   }
 }

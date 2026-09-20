@@ -107,7 +107,7 @@ export function ModeControl({
       >
         <Stamp size={19} />
         <span className="mode-option-copy">
-          Censor<small>Cover it. Keep the choice.</small>
+          Censor<small>Blur it. Keep the choice.</small>
         </span>
         {settings.mode === "censor" && (
           <Check size={16} className="mode-check" aria-hidden="true" />
@@ -148,7 +148,7 @@ export function Sensitivity({
       <div className="label-line">
         <span className="control-label">Filter strength</span>
         <span className="quiet">
-          {Math.round(settings.threshold * 100)}% confidence
+          {Math.round(settings.threshold * 100)}% minimum score
         </span>
       </div>
       <SegmentedControl.Root

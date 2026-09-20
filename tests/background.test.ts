@@ -80,11 +80,12 @@ describe('extension trust boundary', () => {
     expect((options?.headers as any).Authorization).toBe('Bearer private-service-token');
     expect(String(options?.body)).not.toContain('secret=abc');
   });
-  it('omits thumbnail URLs entirely when thumbnail analysis is disabled', async () => {
-    local.settings.inspectThumbnails=false;
+  it('omits thumbnail URLs even when an older installation enabled image analysis', async () => {
+    local.settings.inspectThumbnails=true;
     await send({type:'ANALYZE',items:[{...item,thumbnailUrl:'https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg?private=secret'}]},content);
     const body=JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
     expect(body.items[0]).not.toHaveProperty('thumbnailUrl');
+    expect(body.inspectThumbnails).toBe(false);
   });
   it('does not send Google opaque redirect tokens when destination inspection is off', async () => {
     local.settings.inspectDestinations=false;

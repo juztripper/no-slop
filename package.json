@@ -3,7 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "An open-source browser extension that makes room for worthwhile content.",
+  "description": "Open-source Chromium extension for AI slop, clickbait and content farms. Reversible filtering with your own OpenRouter key.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juztripper/no-slop.git"
+  },
+  "homepage": "https://github.com/juztripper/no-slop#readme",
+  "bugs": {
+    "url": "https://github.com/juztripper/no-slop/issues"
+  },
+  "keywords": [
+    "browser-extension",
+    "chrome-extension",
+    "manifest-v3",
+    "content-filter",
+    "ai-slop",
+    "self-hosted",
+    "openrouter",
+    "typescript",
+    "react",
+    "accessibility"
+  ],
   "license": "AGPL-3.0-only",
   "engines": {
     "node": ">=24.0.0"
@@ -11,6 +31,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsx scripts/build.ts",
+    "release:package": "npm run build && tsx scripts/package-release.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -19,7 +40,8 @@
     "server:start": "node --env-file=.env dist-server/index.js",
     "check": "npm run typecheck && npm test && npm run build && npm run server:build",
     "eval:live": "tsx --env-file=.env scripts/evaluate.ts",
-    "eval:holdout": "tsx --env-file=.env scripts/evaluate-holdout.ts"
+    "eval:holdout": "tsx --env-file=.env scripts/evaluate-holdout.ts",
+    "eval:text": "tsx --env-file=.env scripts/evaluate-text.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

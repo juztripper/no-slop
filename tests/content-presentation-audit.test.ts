@@ -12,12 +12,54 @@ function candidate(): Candidate {
 afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); });
 
 describe('presentation ownership and complete-unit coverage', () => {
+  it('keeps hidden content hidden and restores the original surface and inert state', () => {
+    document.body.innerHTML = '<article style="background-color: #080808; border-radius: 14px; overflow: hidden"><div>Visible content</div><div style="visibility: hidden">Hidden content</div><div inert="inert" style="visibility: collapse">Collapsed content</div></article>';
+    const record = candidate();
+    const original = record.element.outerHTML;
+    const children = [...record.element.children] as HTMLElement[];
+    const presentation = presentCandidate(record, verdict, { ...DEFAULT_SETTINGS, animations: false }, vi.fn());
+    expect(children.map(child => child.style.visibility)).toEqual(['visible', 'hidden', 'collapse']);
+    expect(children.every(child => child.hasAttribute('inert'))).toBe(true);
+    const backdrop = record.element.querySelector<HTMLElement>('[data-no-slop-backdrop]')!;
+    expect(backdrop.style.backgroundColor).toBe('rgb(8, 8, 8)');
+    expect(backdrop.style.borderRadius).toBe('14px');
+    expect(backdrop.getAttribute('aria-hidden')).toBe('true');
+    presentation.restore();
+    expect(record.element.outerHTML).toBe(original);
+    expect([...record.element.children]).toEqual(children);
+  });
+
+  it.each([
+    ['rgb(8, 8, 8)', 'dark'],
+    ['rgb(255, 255, 255)', 'light'],
+  ])('matches the actual ancestor surface %s', (background, tone) => {
+    document.body.innerHTML = `<main style="background: ${background}"><article><div>Visible content</div></article></main>`;
+    const shadow = vi.spyOn(Element.prototype, 'attachShadow');
+    presentCandidate(candidate(), verdict, { ...DEFAULT_SETTINGS, animations: false }, vi.fn());
+    const root = shadow.mock.results[0].value as ShadowRoot;
+    expect((root.host as HTMLElement).dataset.tone).toBe(tone);
+    expect(root.querySelector('button')!.getAttribute('aria-description')).toContain(verdict.reasons[0]);
+  });
+
+  it.each([
+    [true, false, true],
+    [false, false, false],
+    [true, true, false],
+  ])('respects animation preference %s and reduced motion %s', (animations, reducedMotion, expected) => {
+    document.body.innerHTML = '<article><div>Original content</div></article>';
+    const shadow = vi.spyOn(Element.prototype, 'attachShadow');
+    presentCandidate(candidate(), verdict, { ...DEFAULT_SETTINGS, animations }, vi.fn(), reducedMotion);
+    const root = shadow.mock.results[0].value as ShadowRoot;
+    expect(root.querySelector('.mask')!.classList.contains('animate')).toBe(expected);
+  });
+
   it('covers direct text, SVG and a focusable root while leaving the mask explicitly visible', () => {
     document.body.innerHTML = '<article tabindex="0">Direct text<svg tabindex="0"><text>SVG content</text></svg><a href="/">Original link</a></article>';
     const record = candidate(); const original = record.element.innerHTML;
     const presentation = presentCandidate(record, verdict, { ...DEFAULT_SETTINGS, animations: false }, vi.fn());
     expect(record.element.style.visibility).toBe('hidden');
-    expect(record.element.querySelector('svg')!.style.visibility).toBe('hidden');
+    expect(record.element.querySelector('svg')!.style.visibility).toBe('visible');
+    expect(record.element.querySelector('svg')!.hasAttribute('inert')).toBe(true);
     expect(record.element.querySelector('a')!.hasAttribute('inert')).toBe(true);
     expect((record.element.querySelector('[data-no-slop-root]') as HTMLElement).style.visibility).toBe('visible');
     presentation.restore();

@@ -9,7 +9,7 @@ let windowEvents: ReturnType<typeof vi.spyOn>;
 
 beforeAll(async () => {
   windowEvents = vi.spyOn(window, 'addEventListener');
-  vi.stubGlobal('chrome', { runtime: { sendMessage: vi.fn(), onMessage: { addListener: vi.fn(callback => { listener = callback; }) } } });
+  vi.stubGlobal('chrome', { runtime: { id: 'test-extension', sendMessage: vi.fn(), onMessage: { addListener: vi.fn(callback => { listener = callback; }), removeListener: vi.fn() } } });
   await import('../src/content/index');
 });
 afterAll(() => {

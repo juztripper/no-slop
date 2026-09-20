@@ -20,4 +20,4 @@ body:
     id: config
     attributes:
       label: Filter settings and reason shown
-      description: Include the threshold and whether destination or thumbnail checks were on. No secrets.
+      description: Include the threshold, whether destination checks were on, and the detector version. Images are not analyzed. No secrets.

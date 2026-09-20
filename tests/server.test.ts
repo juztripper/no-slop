@@ -4,6 +4,14 @@ import { readConfig } from '../server/config';
 const body = { items: [{ id: 'a', platform: 'forum', kind: 'post', title: 'Test', text: 'A useful post.' }], inspectThumbnails: false, inspectDestinations: false };
 const detector = () => ({ analyze: vi.fn().mockResolvedValue({ verdicts: [], errors: [] }) });
 describe('detector HTTP service', () => {
+  it('accepts older clients but disables their requested image inspection', async () => {
+    const model = detector(); const app = await createApp(readConfig({ OPENROUTER_API_KEY: 'test', BUDGET_FILE: '' }), model);
+    try {
+      expect((await app.inject('/health')).json().capabilities.thumbnails).toBe(false);
+      expect((await app.inject({method:'POST',url:'/v1/analyze',payload:{...body,inspectThumbnails:true}})).statusCode).toBe(200);
+      expect(model.analyze).toHaveBeenCalledWith(body.items,expect.objectContaining({inspectThumbnails:false}));
+    } finally { await app.close(); }
+  });
   it('validates bounded items and unique IDs before model work', async () => {
     const model = detector(); const app = await createApp(readConfig({ OPENROUTER_API_KEY: 'test', BUDGET_FILE: '' }), model);
     for (const payload of [{ ...body, items: Array(9).fill(body.items[0]) }, { ...body, items: [body.items[0], body.items[0]] }, { ...body, surprise: 'no' }]) {

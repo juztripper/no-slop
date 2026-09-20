@@ -1,35 +1,89 @@
-# Hosting the free detector
+# Run your own detector
 
-The browser never contains the sponsor's OpenRouter key. It talks to this service, which holds the key, enriches public evidence, and calls Jev. The repository is prepared for deployment; it does not claim a public endpoint or store listing exists.
+NO SLOP is bring-your-own-key. The extension talks to a detector you run, and that detector calls Jev through **your OpenRouter account**. You control the key and pay the provider usage. The project does not supply a hosted endpoint, shared credits, or a maintainer-funded key.
 
-## Local use
+The key belongs in the detector's environment, never in extension settings, browser storage, a release ZIP, or a public repository. The optional **service token** is a separate password for your detector; it is not your OpenRouter key.
 
-Use Node 24 or later. Copy `.env.example` to `.env` only if you do not already have a key file. Set `OPENROUTER_API_KEY`, then run `npm ci`, `npm run build`, and `npm run server:dev`. Load `dist/` from `chrome://extensions` using **Developer mode → Load unpacked**. The first-run settings explain the data flow and require consent. The service defaults to `http://localhost:8787`.
+## Local setup
 
-`OPENAI_API_KEY` is accepted as a legacy variable only when its value begins with `sk-or-`. New setups should use the canonical variable. Never commit `.env`.
+You need Node.js 24+, npm, Chrome or Edge, the project source, and your own OpenRouter API key with provider credits for detection. The interface preview and deterministic tests work without a key.
 
-## A single public instance
+1. In the source directory, install and build:
 
-1. Choose a host that supports Docker, outbound HTTPS and DNS, and a persistent volume. Run one replica for this release; the rate limit and cache are per process, and the budget ledger is not a distributed counter.
-2. Set `OPENROUTER_API_KEY` as a host secret. Apply an OpenRouter key credit/spend limit independently of this service. `DAILY_CALL_BUDGET` caps reserved model calls, not dollars; vision and text have different prices.
-3. Set `ALLOWED_ORIGINS` to the exact published extension origin, for example `chrome-extension://<32-character-extension-id>`. Get the actual ID from the packaged extension. For Docker development, allow the exact unpacked extension origin as well.
-4. Use a persistent `/data` volume for `BUDGET_FILE=/data/budget.json`. The service refuses to start with a corrupt ledger. Do not erase the volume to restart the service.
-5. Put a TLS reverse proxy in front of port 8787. The supplied Compose configuration binds its port only to the host's loopback interface. Forward the real client IP and set `TRUST_PROXY` to that proxy's actual IP/CIDR. A wildcard makes per-IP limits ineffective.
-6. Configure an edge rate limit/WAF and an operator alert for provider balance and service errors. Origins can be forged outside a browser; CORS is not authentication or billing protection. A shared token shipped to every user is also not a secret. Keep the global budget and upstream spending cap enabled for the sponsored service.
-7. Verify `GET /health`, a known good item and a known poor item through `POST /v1/analyze`, and a real installed extension from outside the host network. Check 429 behavior and a restart without resetting the budget.
-8. Set the extension's service address to the HTTPS origin. For a public build, change only the non-secret default endpoint in `src/shared/contracts.ts`, build again, and complete store review.
+   ```sh
+   npm ci
+   npm run build
+   ```
 
-For a private/self-hosted deployment set `SERVICE_TOKEN` to a random secret and enter it in **Service & privacy** in the extension. It stays in local extension storage, is hidden from content scripts, and is never synced. The provider key stays on the server.
+2. Copy `.env.example` to `.env` if the file does not already exist. Set `OPENROUTER_API_KEY` to your own key. Keep `HOST=127.0.0.1` and `PORT=8787` for local use. Set an upstream key spending limit and choose a `DAILY_CALL_BUDGET` you are comfortable with. The daily limit counts reserved calls, including failures; it does not cap currency spend.
+
+3. Start the detector and leave this terminal running:
+
+   ```sh
+   npm run server:dev
+   ```
+
+4. Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, click **Load unpacked**, and select `dist/`.
+
+   If you downloaded `no-slop-0.1.0-chromium.zip`, extract it into a permanent folder and select that folder instead. `manifest.json` must be at the selected folder's root. The ZIP only replaces the extension build step; the detector still runs from the matching project source.
+
+5. Open NO SLOP's settings → **Privacy & service**. Leave the detector address at `http://localhost:8787`, test the connection, review the data flow, and enable content analysis. With the default local setup the service token field stays empty. Refresh existing feed tabs.
+
+6. Keep the detector running while browsing. Closing its terminal stops detection; content stays visible if the detector is unavailable. Use the popup to pause filtering or restore the page.
+
+After rebuilding, reload the extension on the browser's extensions page and refresh feed tabs. Existing content scripts cannot use a reloaded extension until the page is refreshed.
+
+`OPENAI_API_KEY` is accepted as a legacy variable only when its value begins with `sk-or-`. New setups should use `OPENROUTER_API_KEY`. Never commit `.env`.
+
+## Check the setup without spending credits
 
 ```sh
-docker compose up --build -d
 curl http://localhost:8787/health
+npm run check
 ```
 
-The image is non-root, the Compose filesystem is read-only except the budget volume and temporary directory, and no page bodies are logged. The health route confirms configuration/readiness, not provider balance or model availability. Run the live evaluation before a release.
+The health route checks configuration/readiness, not provider balance or model availability. Deterministic tests use mocks. `npm run eval:text`, `npm run eval:live`, and `npm run eval:holdout` make paid provider calls; run them only when you intend to use your account credits.
 
-## Scaling and release gates
+## Docker on your computer
 
-Before adding replicas, replace the local limiter, queue coordination, and budget ledger with shared atomic storage. Before advertising unrestricted public availability, validate abuse controls under load, choose a support/privacy contact, publish the privacy policy, qualify every supported logged-in site, and submit browser-store permission/privacy disclosures. Current tests cannot establish that every account's personalized DOM works.
+The supplied `compose.yaml` binds port 8787 to the host's loopback interface. Docker runs the service on `0.0.0.0` inside the container, so you must explicitly allow your extension origin:
 
-Public costs depend heavily on cache hit rate, feed volume, thumbnail frequency, and the selected vision model. Measure actual provider `usage.cost` with `npm run eval:live`; do not price a hosted service from text-token cost alone.
+1. Load the extension and copy its ID from the browser's extensions page.
+2. Set `ALLOWED_ORIGINS=chrome-extension://YOUR_EXTENSION_ID` in `.env`. Replace the placeholder with the actual ID. Comma-separate origins if you use multiple browser profiles.
+3. Set `SERVICE_TOKEN` to a random secret and enter the same token under **Privacy & service**.
+4. Start the container:
+
+   ```sh
+   docker compose up --build -d
+   curl http://localhost:8787/health
+   ```
+
+The image runs without root. Its filesystem is read-only except the budget volume and temporary directory. The persistent budget volume must survive restarts. Docker configuration is provided; see the [verification record](VERIFICATION.md) for the checks actually completed.
+
+## Host on a server you control
+
+Use a private single-instance deployment for this release. The limiter, queue and cache are per process, and the budget ledger is not a distributed counter.
+
+1. Store your `OPENROUTER_API_KEY` as a host secret. Apply a provider key spending limit independently of `DAILY_CALL_BUDGET`.
+2. Set a random `SERVICE_TOKEN` and the exact extension origin(s) in `ALLOWED_ORIGINS`. CORS is not authentication: non-browser clients can forge an origin.
+3. Mount persistent storage for `BUDGET_FILE=/data/budget.json`. The service refuses to start with a corrupt ledger. Do not delete the ledger to restart the service.
+4. Put a TLS reverse proxy in front of port 8787. Keep the container port bound to loopback. Set `TRUST_PROXY` to the proxy's actual IP/CIDR; never use a wildcard.
+5. Add appropriate host/edge rate limits, monitor provider balance and errors, and review the infrastructure's logging and retention.
+6. Set the extension's service address to your HTTPS URL and enter the service token. Changing the address revokes consent; review and enable analysis again.
+7. Verify the health route, restart persistence, and the installed extension. An actual detection test uses your provider credits.
+
+There is no need to change or rebuild the extension's default endpoint: the address is configurable. Do not expose your private detector to the internet without access controls. Operating a service for other people is a separate responsibility and requires clear provider/data-use disclosures and abuse controls.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Connection test fails | Keep the detector running; check the address and `/health`; use HTTP only on localhost or HTTPS remotely. |
+| Unauthorized response | Use your detector's `SERVICE_TOKEN` in extension settings, not the OpenRouter key. |
+| Origin rejected | For Docker/remote hosting, allow the exact extension ID shown in your browser. Unpacked IDs can change when the folder changes. |
+| Connected, but provider errors appear | Check your own key, credits and provider access. Health checks do not call Jev. |
+| “Resuming shortly…” | The extension is respecting a rate limit; it retries automatically. A reached daily limit requires the next UTC day or an intentional budget change. |
+| Older page stops scanning after reload | Reload the extension, then refresh the feed tab to load its new content script. |
+| Content stays visible | Analysis may be paused, consent may be off, the layout may be unsupported, evidence may be uncertain, or the detector may be unavailable. |
+
+Chrome and Edge are the development targets. Firefox, Safari, store distribution, and every account-specific feed layout remain outside this preview's qualification.

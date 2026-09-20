@@ -14,7 +14,7 @@ Analysis requests share a two-second admission interval across tabs (up to 30 ba
 
 ## Detector service
 
-Fastify accepts bounded batches at `POST /v1/analyze`. The server performs three operations when requested: retrieve public destination HTML; retrieve an allowlisted thumbnail and summarize its visible evidence with a vision model; send the resulting text record to Jev's Decisions API. Jev returns typed probabilities, not generated explanations. A deterministic function maps these signals to a verdict. The browser's settings decide whether to act on it.
+Fastify accepts bounded batches at `POST /v1/analyze`. The server optionally retrieves public search-destination HTML, then sends the available text record to Jev's Decisions API. Images and legacy thumbnail requests are ignored. Jev returns typed scores, not generated explanations. Evidence sufficiency gates the direct poor-quality score; authorship clues select its category. The browser's settings decide whether to act on it. These scores are not calibrated estimates of real-world accuracy.
 
 Untrusted URLs use public-address validation plus a DNS-pinned connection. Redirects are revalidated, body sizes and timeouts are bounded, cookies are never forwarded, and HTML is never executed. Provider output is parsed against schemas and displayed as text. Provider failures leave content visible.
 
@@ -24,6 +24,6 @@ A finite queue limits work. A bounded TTL cache stores hashed-key verdicts, and 
 
 - Detecting low quality is subjective. None of the categories proves human or AI authorship.
 - Public HTML fetching cannot assess all script-driven behavior, protected content, accessibility, or factual truth. Blocked/unsupported pages must not masquerade as inspected destinations.
-- Title/thumbnail analysis cannot establish everything inside a video. The product does not transcribe video or audio.
+- Text previews cannot establish everything inside a video. The product does not inspect images or transcribe video or audio.
 - DOM fixtures catch known regressions but cannot substitute for current, account-specific browser qualification.
 - A local build and passing tests do not deploy a hosted service, publish a repository, or constitute store approval.

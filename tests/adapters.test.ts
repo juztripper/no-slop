@@ -10,21 +10,21 @@ const extract = (html: string, page = 'https://www.youtube.com/results?search_qu
 beforeEach(() => { document.body.innerHTML = ''; });
 
 describe('native content units', () => {
-  it('extracts a whole YouTube card, real title, description and thumbnail without popularity metadata', () => {
+  it('extracts a whole YouTube card, real title and description without images or popularity metadata', () => {
     const [item] = extract(`<ytd-video-renderer><ytd-thumbnail><a href="/watch?v=abcdefghijk&amp;si=track"><img src="https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"></a></ytd-thumbnail><h3><a id="video-title" title="Making a mortise by hand">Making a mortise by hand</a></h3><div class="metadata-snippet-text">Measured hand-cut joints with a sharpened chisel.</div><span>100 million views</span><button>More</button></ytd-video-renderer>`);
     expect(item.element.tagName).toBe('YTD-VIDEO-RENDERER');
     expect(item.item.title).toBe('Making a mortise by hand');
     expect(item.item.text).toContain('Measured hand-cut');
     expect(item.item.text).not.toContain('million views');
     expect(item.item.url).toBe('https://www.youtube.com/watch?v=abcdefghijk');
-    expect(item.item.thumbnailUrl).toContain('hqdefault.jpg');
+    expect(item.item.thumbnailUrl).toBeUndefined();
   });
 
   it('deduplicates rich-card wrappers and supports current YouTube Shorts markup', () => {
     const items = extract(`<ytd-rich-item-renderer><ytd-rich-grid-media><a id="video-title" href="/watch?v=abcdefghijk">How I restored a hand plane</a></ytd-rich-grid-media></ytd-rich-item-renderer><ytm-shorts-lockup-view-model><h3><a href="/shorts/zyxwvutsrqp">A tiny dovetail joint tutorial</a></h3></ytm-shorts-lockup-view-model>`);
     expect(items).toHaveLength(2);
     expect(items[0].element.tagName).toBe('YTD-RICH-ITEM-RENDERER');
-    expect(items[1].item.thumbnailUrl).toBe('https://i.ytimg.com/vi/zyxwvutsrqp/hqdefault.jpg');
+    expect(items[1].item.thumbnailUrl).toBeUndefined();
   });
 
   it('uses a full comment and keeps replies as contextual content', () => {
@@ -148,6 +148,14 @@ describe('conservative fallback and privacy', () => {
     initial.element.querySelector('a')!.textContent = 'An entirely different video demonstration';
     const [different] = extractCandidates(document, new URL('https://www.youtube.com/'));
     expect(different.fingerprint).not.toBe(initial.fingerprint);
+  });
+
+  it('does not rescan unchanged text when a thumbnail or preview changes', () => {
+    const [initial] = extract('<ytd-video-renderer><a id="video-title" href="/watch?v=abcdefghijk">A practical woodworking demonstration</a><img src="https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"></ytd-video-renderer>');
+    initial.element.querySelector('img')!.src = 'https://i.ytimg.com/vi/abcdefghijk/sddefault.jpg';
+    const [updated] = extractCandidates(document, new URL('https://www.youtube.com/'));
+    expect(updated.fingerprint).toBe(initial.fingerprint);
+    expect(updated.item.thumbnailUrl).toBeUndefined();
   });
 
   it('bounds output and can skip offscreen units before reading their content', () => {

@@ -23,14 +23,14 @@ describe('conservative decision policy', () => {
     expect(verdict.category).toBe('quality');
   });
   it('requires poor quality and specific synthetic evidence for AI slop', () => {
-    expect(verdictFromDecision(item, decision(0.99, 0.98), evidence)).toMatchObject({ category: 'ai-slop', confidence: expect.closeTo(0.96) });
+    expect(verdictFromDecision(item, decision(0.99, 0.98), evidence)).toMatchObject({ category: 'ai-slop', confidence: 0.99 });
     expect(verdictFromDecision(item, decision(0.99, 0.6), evidence).category).toBe('slop');
   });
   it('keeps context-poor content despite a high poor-quality score', () => {
     expect(verdictFromDecision(item, decision(0.99, 0.01, 0.4), evidence).category).toBe('uncertain');
   });
-  it('uses a conservative joint bound rather than treating independent questions as independent evidence', () => {
-    expect(verdictFromDecision(item, decision(0.95, 0.95, 0.95), evidence).confidence).toBe(0.85);
+  it('does not subtract authorship scores from the direct quality score', () => {
+    expect(verdictFromDecision(item, decision(0.95, 0.95, 0.95), evidence).confidence).toBe(0.95);
   });
 });
 describe('detector orchestration', () => {
@@ -48,29 +48,42 @@ describe('detector orchestration', () => {
     expect(result.verdicts).toHaveLength(1); expect(result.errors).toHaveLength(1);
     expect(JSON.stringify(result)).not.toContain('secret upstream stack');
   });
-  it('keeps content when requested image inspection fails', async () => {
+  it('ignores images even if an older extension still requests them', async () => {
     const model = provider(); const download = vi.fn().mockRejectedValue(new Error('unavailable'));
     const result = await new Detector(config(), model, download).analyze([{ ...item, thumbnailUrl: 'https://i.ytimg.com/vi/example/hqdefault.jpg' }], { inspectThumbnails: true, inspectDestinations: false });
-    expect(result.verdicts[0]).toMatchObject({ category: 'uncertain', evidence: { thumbnail: false } });
-    expect(result.errors).toHaveLength(1);
+    expect(result.verdicts[0]).toMatchObject({ category: 'human-slop', confidence:0.99, evidence:{thumbnail:false} });
+    expect(result.errors).toHaveLength(0);
+    expect(download).not.toHaveBeenCalled();
+    expect(model.describeImage).not.toHaveBeenCalled();
+    expect(vi.mocked(model.decide).mock.calls[0][0]).not.toHaveProperty('thumbnail');
   });
-  it('actually passes image bytes to vision then its evidence to Jev', async () => {
+  it('does not repeat text analysis when only an ignored thumbnail changes', async () => {
+    const model = provider(); const detector = new Detector(config(),model);
+    await detector.analyze([{...item,thumbnailUrl:'https://i.ytimg.com/a.jpg'}],{inspectThumbnails:true,inspectDestinations:false});
+    await detector.analyze([{...item,thumbnailUrl:'https://i.ytimg.com/b.jpg'}],{inspectThumbnails:false,inspectDestinations:false});
+    expect(model.decide).toHaveBeenCalledTimes(1);
+  });
+  it('can use independently sufficient search text when optional destination retrieval fails', async () => {
     const model = provider();
-    const image = { bytes: Buffer.from('image'), contentType: 'image/jpeg', url: 'https://i.ytimg.com/x.jpg' };
-    const result = await new Detector(config(), model, vi.fn().mockResolvedValue(image)).analyze([{ ...item, thumbnailUrl: image.url }], { inspectThumbnails: true, inspectDestinations: false });
-    expect(model.describeImage).toHaveBeenCalledWith(image, expect.any(AbortSignal));
-    expect(model.decide).toHaveBeenCalledWith(expect.objectContaining({ thumbnail: expect.objectContaining({ description: 'A bicycle' }) }), expect.any(AbortSignal));
-    expect(result.verdicts[0].evidence.thumbnail).toBe(true);
+    const result = await new Detector(config(),model,vi.fn().mockRejectedValue(new Error('unavailable'))).analyze([{...item,kind:'search',url:'https://example.com'}],{inspectThumbnails:false,inspectDestinations:true});
+    expect(result.verdicts[0]).toMatchObject({category:'human-slop',evidence:{destination:false}});
+    expect(result.errors).toHaveLength(1);
+    expect(model.decide).toHaveBeenCalledWith(expect.objectContaining({destinationStatus:'unavailable; judge only the supplied text'}),expect.any(AbortSignal));
+  });
+  it('still abstains when missing destination content leaves too little evidence', async () => {
+    const model = provider(decision(.97,.1,.3));
+    const result = await new Detector(config(),model,vi.fn().mockRejectedValue(new Error('unavailable'))).analyze([{...item,kind:'search',url:'https://example.com'}],{inspectThumbnails:false,inspectDestinations:true});
+    expect(result.verdicts[0]).toMatchObject({category:'uncertain',confidence:0});
   });
   it('does not fetch arbitrary social permalinks as search destinations', async () => {
     const download = vi.fn();
     await new Detector(config(), provider(), download).analyze([{ ...item, url: 'https://example.com/post' }], { inspectThumbnails: false, inspectDestinations: true });
     expect(download).not.toHaveBeenCalled();
   });
-  it('blocks unsupported thumbnail hosts without fetching them', async () => {
+  it('ignores unsupported image hosts without generating missing-image warnings', async () => {
     const download = vi.fn();
     const result = await new Detector(config(), provider(), download).analyze([{ ...item, thumbnailUrl: 'https://attacker.example/image.jpg' }], { inspectThumbnails: true, inspectDestinations: false });
-    expect(download).not.toHaveBeenCalled(); expect(result.verdicts[0].category).toBe('uncertain');
+    expect(download).not.toHaveBeenCalled(); expect(result.errors).toHaveLength(0); expect(result.verdicts[0].evidence.thumbnail).toBe(false);
   });
 });
 describe('OpenRouter boundary', () => {

@@ -365,8 +365,8 @@ export function PrivacySettings({
             aria-describedby="endpoint-hint"
           />
           <p className="field-hint" id="endpoint-hint">
-            The local default is ready for self-hosting. A free public detector
-            has not been configured in this build.
+            Run your own detector with your OpenRouter key. You pay the provider
+            directly for detection; no hosted service is included.
           </p>
           <label className="field-label" htmlFor="service-token">
             Service access token <span>Optional</span>
@@ -433,12 +433,6 @@ export function PrivacySettings({
           </p>
         </div>
         <Toggle
-          checked={settings.inspectThumbnails}
-          onChange={(inspectThumbnails) => update({ inspectThumbnails })}
-          label="Inspect thumbnails"
-          description="Send thumbnail URLs so the detector can fetch and inspect public images. Provider capabilities may limit image analysis."
-        />
-        <Toggle
           checked={settings.inspectDestinations}
           onChange={(inspectDestinations) => update({ inspectDestinations })}
           label="Inspect search destinations"
@@ -451,7 +445,7 @@ export function PrivacySettings({
             checked={settings.consent}
             onChange={(consent) => update({ consent })}
             label="Allow content analysis"
-            description="I allow snippets and context from enabled sites to be sent to this detector and its model provider. When selected above, thumbnail images and public search destination pages may also be fetched and analyzed. I can revoke this at any time."
+            description="I allow text snippets and context from enabled sites to be sent to this detector and its model provider. When selected above, public search destination pages may also be fetched and analyzed. Images are not analyzed. I can revoke this at any time."
           />
           <p>
             {settings.consent

@@ -48,7 +48,8 @@ describe('presentation and restoration', () => {
     const anchor = candidate.element.querySelector('a');
     const presentation = presentCandidate(candidate, verdict(candidate.item.id), settings(), vi.fn());
     expect(candidate.element.querySelector('[data-no-slop-root]')).not.toBeNull();
-    expect(anchor?.style.visibility).toBe('hidden');
+    expect(anchor?.style.visibility).toBe('visible');
+    expect(anchor?.hasAttribute('inert')).toBe(true);
     expect(candidate.element.querySelector('a')).toBe(anchor);
     presentation.restore();
     expect(candidate.element.getAttribute('style')).toBe(originalStyle);
@@ -184,7 +185,7 @@ describe('page lifecycle and bounded work', () => {
     document.body.insertAdjacentHTML('beforeend', card('A second freshly inserted woodworking demonstration', 1));
     await vi.advanceTimersByTimeAsync(500);
     expect(controller.pageStats.scanned).toBe(3);
-    expect(document.querySelectorAll('[data-no-slop-root]')).toHaveLength(2);
+    expect(document.querySelectorAll('[data-no-slop-root]:not([data-no-slop-backdrop])')).toHaveLength(2);
     expect(runtime.send.mock.calls.filter(([message]) => message.type === 'ANALYZE')).toHaveLength(2);
     controller.restorePage();
     expect(initial.querySelector('a')!.textContent).toContain('Completely different');

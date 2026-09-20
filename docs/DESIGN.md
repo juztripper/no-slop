@@ -27,9 +27,11 @@ The accepted layout stays intact: four persistent settings destinations, one rea
 
 - Say “likely” and explain concrete quality signals. A model judgment is not proof of authorship.
 - Censor is the default. Revealing a result is one action. Whole cards are hidden when safe; paragraphs stay in context.
+- Censored posts retain their shape and visual content beneath a soft blur. A small stamp and reveal control match the page's light or dark surface; container queries shorten the explanation or reduce the control to an accessible eye button on tiny cards. Keep original content inert until revealed, preserve page-owned DOM nodes, and restore their styles faithfully.
+- The settings preview uses the actual content presentation renderer with an explicitly illustrative verdict. Check `dev/presentation.html` locally for large posts, search results, short replies and live resizing without making model calls.
 - Disabled motion removes the stamp and exit animation. Device-level reduced motion overrides the extension setting.
 - Preferences save immediately. Service credentials use a separate save action so partially typed URLs are not used for analysis.
-- Changing the detector address revokes analysis consent. The consent describes snippets, provider processing, thumbnails and search destination fetching.
+- Changing the detector address revokes analysis consent. The consent describes text snippets, provider processing and optional search destination fetching, and states that images are not analyzed.
 - A failed save shows an error and does not report success. Rapid preference changes are serialized.
 - Disabled or unavailable actions remain understandable. The preview does not fake live scan counts or connection status.
 

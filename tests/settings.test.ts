@@ -13,6 +13,10 @@ describe('filtering policy', () => {
     expect(shouldFilter({...verdict,category:'quality',confidence:1},DEFAULT_SETTINGS)).toBe(false);
   });
   it('does not enable network processing before consent', () => expect(DEFAULT_SETTINGS.consent).toBe(false));
+  it('normalizes older image-analysis preferences to text-only', () => {
+    expect(DEFAULT_SETTINGS.inspectThumbnails).toBe(false);
+    expect(SettingsSchema.parse({...DEFAULT_SETTINGS,inspectThumbnails:true}).inspectThumbnails).toBe(false);
+  });
   it('filters unknown-authorship slop only with both categories enabled', () => {
     expect(shouldFilter({...verdict,category:'slop'},DEFAULT_SETTINGS)).toBe(true);
     expect(shouldFilter({...verdict,category:'slop'},{...DEFAULT_SETTINGS,aiSlop:false})).toBe(false);

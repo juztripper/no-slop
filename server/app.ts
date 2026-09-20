@@ -29,7 +29,7 @@ export async function createApp(config = readConfig(), detector: Pick<Detector, 
   });
   app.get('/health', async (_request, reply) => {
     if (!config.apiKey) return reply.code(503).send({ status: 'unconfigured', version: '0.1.0', model: config.jevModel });
-    return { status: 'ok', version: '0.1.0', model: config.jevModel, capabilities: { text: true, thumbnails: true, destinations: true } };
+    return { status: 'ok', version: '0.1.0', model: config.jevModel, capabilities: { text: true, thumbnails: false, destinations: true } };
   });
   app.post('/v1/analyze', async (request, reply) => {
     const parsed = AnalyzeRequestSchema.safeParse(request.body);

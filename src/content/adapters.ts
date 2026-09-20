@@ -118,20 +118,11 @@ function makeCandidate(element: HTMLElement, platform: Platform, page: URL, kind
   title = title.slice(0, 600);
   text = text.slice(0, 6000);
   const url = publicLink(element, platform, page);
-  const image = element.querySelector<HTMLImageElement>('img[src],img[data-src]');
-  let thumbnailUrl = kind !== 'comment' && (platform === 'youtube' || platform === 'tiktok' || platform === 'instagram')
-    ? safeUrl(image?.currentSrc || image?.getAttribute('src') || image?.getAttribute('data-src'), page) : undefined;
-  // YouTube lazy thumbnails are sometimes transparent placeholders before visibility.
-  if (!thumbnailUrl && platform === 'youtube' && kind === 'video' && url) {
-    const parsed = new URL(url);
-    const video = parsed.searchParams.get('v') ?? parsed.pathname.match(/^\/shorts\/([\w-]{11})/)?.[1];
-    if (video && /^[\w-]{11}$/.test(video)) thumbnailUrl = `https://i.ytimg.com/vi/${video}/hqdefault.jpg`;
-  }
   const context = kind === 'comment' ? cleanText(element.closest('[role="feed"],main')?.querySelector('h1') ?? element.ownerDocument.createElement('span')).slice(0, 300) : '';
-  const key = fingerprint(JSON.stringify([platform, kind, title, text, url, thumbnailUrl, context]));
+  const key = fingerprint(JSON.stringify([platform, kind, title, text, url, context]));
   return {
     element, fingerprint: key,
-    item: { id: `ns-${key}`, platform, kind, title, text, ...(url ? { url } : {}), ...(thumbnailUrl ? { thumbnailUrl } : {}), ...(context ? { context } : {}) },
+    item: { id: `ns-${key}`, platform, kind, title, text, ...(url ? { url } : {}), ...(context ? { context } : {}) },
     preserveContext: kind === 'paragraph' || !!element.querySelector('shreddit-comment,[data-testid="comment"],[role="article"],ul ul,.replies,.children,ytd-comment-thread-renderer,ytd-comment-replies-renderer,.topic-post,article.message'),
   };
 }

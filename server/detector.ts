@@ -3,7 +3,7 @@ import type { AnalyzeResponse, ContentItem, Verdict } from '../src/shared/contra
 import type { Config } from './config.js';
 import { DailyBudget, ExpiringCache, ServiceError, WorkGate } from './limits.js';
 import { OpenRouterProvider, POLICY_VERSION, type Decision, type VisualEvidence } from './provider.js';
-import { downloadPublic, extractDestination, isAllowedThumbnail } from './safe-fetch.js';
+import { downloadPublic, extractDestination } from './safe-fetch.js';
 
 export interface InspectionOptions { inspectThumbnails: boolean; inspectDestinations: boolean }
 export interface Provider { decide(record: unknown, signal?: AbortSignal): Promise<Decision>; describeImage(image: Awaited<ReturnType<typeof downloadPublic>>, signal?: AbortSignal): Promise<VisualEvidence> }
@@ -16,18 +16,19 @@ export function verdictFromDecision(item: ContentItem, decision: Decision, evide
   const sufficient = decision.answers.enough_evidence.noul;
   let category: Verdict['category'] = 'uncertain'; let confidence = 0;
   const reasons: string[] = [];
-  // Conservative joint lower bounds, without assuming independent questions.
-  // P(A and B) >= P(A)+P(B)-1. Product would assert unverified independence.
-  const poorEvidence = Math.max(0, lowQuality + sufficient - 1);
-  if (poorEvidence >= 0.6) {
+  // The model directly scores the visible item's quality. Sufficiency is an
+  // abstention gate; authorship selects a category, not a second quality penalty.
+  // These scores are not calibrated statistical probabilities.
+  if (sufficient >= 0.7 && lowQuality >= 0.6) {
+    confidence = lowQuality;
     if (synthetic >= 0.85) {
-      category = 'ai-slop'; confidence = Math.max(0, lowQuality + sufficient + synthetic - 2);
+      category = 'ai-slop';
       reasons.push('Likely low-value content with signs of synthetic generation.');
     } else if (synthetic <= 0.25) {
-      category = 'human-slop'; confidence = poorEvidence;
+      category = 'human-slop';
       reasons.push('Likely low-value content or spam. Its authorship is unknown.');
     } else {
-      category = 'slop'; confidence = poorEvidence;
+      category = 'slop';
       reasons.push('Likely low-value content; its authorship is unclear.');
     }
   } else if (lowQuality <= 0.25 && sufficient >= 0.7) {
@@ -63,8 +64,8 @@ export class Detector {
     return { verdicts: results.flatMap(result => result.verdict ? [result.verdict] : []), errors: results.flatMap(result => result.errors) };
   }
   private async inspect(item: ContentItem, options: InspectionOptions): Promise<Detection> {
-    const { id: _id, ...content } = item;
-    const key = createHash('sha256').update(JSON.stringify({ content, options, policy: POLICY_VERSION, jev: this.config.jevModel, vision: this.config.visionModel })).digest('hex');
+    const { id: _id, thumbnailUrl: _thumbnail, ...content } = item;
+    const key = createHash('sha256').update(JSON.stringify({ content, inspectDestinations:options.inspectDestinations, policy: POLICY_VERSION, jev: this.config.jevModel })).digest('hex');
     const cached = this.cache.get(key); if (cached) return cached;
     const existing = this.pending.get(key); if (existing) return existing;
     if (this.pending.size >= this.config.maxConcurrent + this.config.maxPending) throw new ServiceError('Detector is busy. Content was kept.', 429);
@@ -74,15 +75,7 @@ export class Detector {
     const operation = this.gate.run(async () => {
       const warnings: string[] = [];
       const evidence: Verdict['evidence'] = { text: Boolean(item.title.trim() || item.text.trim()), thumbnail: false, destination: false };
-      let thumbnail: VisualEvidence | undefined;
       let destination: ReturnType<typeof extractDestination> | undefined;
-      if (options.inspectThumbnails && item.thumbnailUrl) {
-        if (!isAllowedThumbnail(item.thumbnailUrl)) warnings.push('Thumbnail host is unsupported; only text was assessed.');
-        else {
-          try { thumbnail = await this.provider.describeImage(await this.downloader(item.thumbnailUrl, 'image', signal), signal); evidence.thumbnail = true; }
-          catch { warnings.push('Thumbnail could not be inspected; only available evidence was assessed.'); }
-        }
-      }
       if (options.inspectDestinations && item.kind === 'search' && item.url) {
         try {
           const page = await this.downloader(item.url, 'html', signal);
@@ -90,15 +83,10 @@ export class Detector {
         } catch { warnings.push('Destination could not be inspected; only the search preview was assessed.'); }
       }
       signal.throwIfAborted();
-      const decision = await this.provider.decide({ platform: item.platform, kind: item.kind, title: item.title, text: item.text, context: item.context || '', thumbnail, destination }, signal);
+      const decision = await this.provider.decide({ platform: item.platform, kind: item.kind, title: item.title, text: item.text, context: item.context || '', destination, destinationStatus: destination ? 'available' : warnings.length ? 'unavailable; judge only the supplied text' : 'not requested' }, signal);
       const verdict = verdictFromDecision(item, decision, evidence);
-      // Missing requested context is not silently treated as full evidence. Keep
-      // borderline results visible until inspection succeeds on a later request.
-      if (warnings.length && ['ai-slop', 'human-slop', 'slop'].includes(verdict.category)) {
-        verdict.category = 'uncertain'; verdict.confidence = 0;
-        verdict.reasons.unshift('Requested evidence was unavailable. Content is kept.');
-        verdict.reasons = verdict.reasons.slice(0, 6);
-      }
+      // Failed enrichment is not evidence against a site. The model must judge
+      // only available text; its sufficiency gate decides whether to abstain.
       const result = { verdict, warnings };
       if (!warnings.length) this.cache.set(key, result);
       return result;
